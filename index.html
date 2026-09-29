@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بازی آنلاین دو نفره</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#14213D; --surface:#1F2E52; --line:#33456f; --text:#F1F5F9; --muted:#9db0d3;
+    --p1:#FCA311; --p2:#5EEAD4; --danger:#ff7a7a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:'Vazirmatn',Tahoma,sans-serif;display:flex;justify-content:center;padding:20px}
+  #app{width:100%;max-width:440px}
+  h1{font-size:28px;font-weight:900;margin:8px 0 20px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:16px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700;background:var(--p1);color:#14213D}
+  button.alt{background:transparent;color:var(--text);border:1px solid var(--line)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible,input:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+  .msg{color:var(--danger);font-size:14px;min-height:20px;margin-top:8px}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:15px}
+  .pl{padding:6px 12px;border-radius:999px;border:2px solid var(--line)}
+  .pl.on{border-color:currentColor}
+  .c1{color:var(--p1)} .c2{color:var(--p2)}
+  .code{font-size:40px;font-weight:900;letter-spacing:8px;text-align:center;direction:ltr;margin:6px 0}
+  .status{text-align:center;font-size:18px;font-weight:700;margin:14px 0;min-height:28px}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr}
+  .cell{aspect-ratio:1;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:56px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0}
+  .cell.X{color:var(--p1)} .cell.O{color:var(--p2)}
+  .cell:disabled{opacity:1}
+  .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .choice{font-size:44px;background:var(--surface);color:var(--text);border:1px solid var(--line);padding:16px 0}
+  .choice.sel{border-color:var(--p1);box-shadow:0 0 0 2px var(--p1)}
+  .reveal{display:flex;justify-content:space-around;font-size:56px;margin:10px 0}
+  .score{display:flex;justify-content:space-around;font-size:22px;font-weight:900}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+
+<script>
+/* ============ ۱) اینجا رو با اطلاعات پروژه‌ی Supabase خودت عوض کن ============ */
+const SUPABASE_URL = 'https://rfkvlmktvrlaovjgzirz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_TENuPLAmnQqEi_UcC4qWLg_CiMcWxB2';
+/* ============================================================================ */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById('app');
+
+const myId = localStorage.getItem('pid') || (localStorage.setItem('pid', crypto.randomUUID()), localStorage.getItem('pid'));
+let room = null, me = 0, channel = null, resolving = false, myPick = null, err = '';
+
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const EMOJI = {rock:'✊', paper:'✋', scissors:'✌️'};
+const BEATS = {rock:'scissors', paper:'rock', scissors:'paper'};
+
+/* ---------- ورود به اتاق ---------- */
+async function createRoom(game){
+  const name = document.getElementById('name').value.trim();
+  if(!name){ err='اسمت رو بنویس'; return renderLobby(); }
+  localStorage.setItem('pname', name);
+  const code = String(Math.floor(1000 + Math.random()*9000));
+  const { data, error } = await sb.from('rooms').insert({ code, game, p1: myId, n1: name }).select().single();
+  if(error){ err='ساخت اتاق ناموفق بود: '+error.message; return renderLobby(); }
+  enter(data);
+}
+
+async function joinRoom(){
+  const name = document.getElementById('name').value.trim();
+  const code = document.getElementById('code').value.trim();
+  if(!name){ err='اسمت رو بنویس'; return renderLobby(); }
+  if(!code){ err='کد اتاق رو بنویس'; return renderLobby(); }
+  localStorage.setItem('pname', name);
+  let { data } = await sb.from('rooms').select().eq('code', code).maybeSingle();
+  if(!data){ err='اتاقی با این کد پیدا نشد'; return renderLobby(); }
+  if(data.p1 !== myId && data.p2 !== myId){
+    if(data.p2){ err='این اتاق پر است'; return renderLobby(); }
+    const r = await sb.from('rooms').update({ p2: myId, n2: name }).eq('code', code).is('p2', null).select().single();
+    if(r.error){ err='ورود ناموفق بود'; return renderLobby(); }
+    data = r.data;
+  }
+  enter(data);
+}
+
+function enter(r){
+  room = r; me = r.p1 === myId ? 1 : 2; myPick = null; err = '';
+  if(channel) sb.removeChannel(channel);
+  channel = sb.channel('room-' + r.code)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${r.code}` }, p => {
+      room = p.new;
+      if(!room.m1 && !room.m2) myPick = null;
+      afterUpdate(); renderGame();
+    })
+    .subscribe();
+  afterUpdate(); renderGame();
+}
+
+function leave(){
+  if(channel) sb.removeChannel(channel);
+  channel = null; room = null; me = 0; renderLobby();
+}
+
+/* ---------- منطق بازی ---------- */
+function checkTTT(b){
+  for(const [a,c,d] of WINS){ if(b[a]!=='.' && b[a]===b[c] && b[a]===b[d]) return b[a]==='X'?1:2; }
+  return b.includes('.') ? 0 : 3;
+}
+
+async function playCell(i){
+  if(room.winner || room.turn !== me || room.board[i] !== '.' || !room.p2) return;
+  const arr = room.board.split(''); arr[i] = me===1 ? 'X' : 'O';
+  const board = arr.join('');
+  await sb.from('rooms').update({ board, turn: me===1?2:1, winner: checkTTT(board) })
+    .eq('code', room.code).eq('board', room.board);
+}
+
+async function pick(m){
+  if(!room.p2 || myPick) return;
+  myPick = m; renderGame();
+  await sb.from('rooms').update(me===1 ? { m1:m } : { m2:m }).eq('code', room.code);
+}
+
+// فقط بازیکن ۱ نتیجه‌ی هر دست سنگ‌کاغذ‌قیچی رو حساب می‌کنه تا امتیاز دوبار ثبت نشه
+async function afterUpdate(){
+  if(room.game==='rps' && me===1 && room.m1 && room.m2 && !resolving){
+    resolving = true;
+    const a = room.m1, b = room.m2;
+    const res = a===b ? 3 : (BEATS[a]===b ? 1 : 2);
+    await sb.from('rooms').update({
+      last_m1:a, last_m2:b, last_res:res,
+      s1: room.s1 + (res===1?1:0), s2: room.s2 + (res===2?1:0),
+      round: room.round + 1, m1:null, m2:null
+    }).eq('code', room.code).eq('round', room.round);
+    resolving = false;
+  }
+}
+
+async function rematch(){
+  const reset = room.game==='ttt'
+    ? { board:'.........', turn:1, winner:0 }
+    : { m1:null, m2:null, s1:0, s2:0, round:1, last_m1:null, last_m2:null, last_res:null };
+  myPick = null;
+  await sb.from('rooms').update(reset).eq('code', room.code);
+}
+
+/* ---------- نمایش ---------- */
+function renderLobby(){
+  app.innerHTML = `
+    <h1>بازی آنلاین دو نفره</h1>
+    <div class="card">
+      <label for="name">اسمت</label>
+      <input id="name" maxlength="16" value="${localStorage.getItem('pname')||''}">
+    </div>
+    <div class="card">
+      <label>یه اتاق بساز و کدش رو به دوستت بده</label>
+      <div class="row">
+        <button id="mk-ttt">دوز</button>
+        <button id="mk-rps">سنگ کاغذ قیچی</button>
+      </div>
+    </div>
+    <div class="card">
+      <label for="code">یا با کد وارد اتاق دوستت شو</label>
+      <div class="row">
+        <input id="code" inputmode="numeric" maxlength="4" placeholder="۴ رقمی" style="direction:ltr;text-align:center">
+        <button class="alt" id="join">ورود</button>
+      </div>
+    </div>
+    <div class="msg">${err}</div>`;
+  document.getElementById('mk-ttt').onclick = () => createRoom('ttt');
+  document.getElementById('mk-rps').onclick = () => createRoom('rps');
+  document.getElementById('join').onclick = joinRoom;
+}
+
+function renderGame(){
+  const r = room, opp = me===1 ? 2 : 1;
+  const nm = k => r['n'+k] || '...';
+  let body = '';
+
+  if(!r.p2){
+    body = `<div class="card"><label>این کد رو به دوستت بده تا وارد بشه</label><div class="code">${r.code}</div></div>
+            <div class="status">منتظر بازیکن دوم…</div>`;
+  } else if(r.game==='ttt'){
+    let status;
+    if(r.winner===3) status = 'مساوی شد';
+    else if(r.winner) status = r.winner===me ? '🎉 بردی!' : 'باختی';
+    else status = r.turn===me ? 'نوبت توئه' : `نوبت ${nm(opp)}`;
+    body = `<div class="status">${status}</div>
+      <div class="board">${r.board.split('').map((c,i)=>
+        `<button class="cell ${c}" data-i="${i}" ${c!=='.'||r.winner||r.turn!==me?'disabled':''}>${c==='X'?'✕':c==='O'?'○':''}</button>`).join('')}</div>`;
+  } else {
+    const waiting = myPick ? `${EMOJI[myPick]} انتخاب شد، منتظر ${nm(opp)}…` : 'انتخاب کن';
+    let last = '';
+    if(r.last_res){
+      const mine = me===1 ? r.last_m1 : r.last_m2, theirs = me===1 ? r.last_m2 : r.last_m1;
+      const txt = r.last_res===3 ? 'مساوی' : (r.last_res===me ? 'دست قبل: بردی' : 'دست قبل: باختی');
+      last = `<div class="reveal"><span>${EMOJI[mine]}</span><span>${EMOJI[theirs]}</span></div><div class="status">${txt}</div>`;
+    }
+    body = `<div class="score"><span class="c1">${r.s1}</span><span class="c2">${r.s2}</span></div>
+      ${last}
+      <div class="status">${waiting}</div>
+      <div class="choices">${Object.keys(EMOJI).map(k=>
+        `<button class="choice ${myPick===k?'sel':''}" data-m="${k}" ${myPick?'disabled':''}>${EMOJI[k]}</button>`).join('')}</div>`;
+  }
+
+  app.innerHTML = `
+    <div class="bar">
+      <span class="pl c1 ${r.game==='ttt'&&r.turn===1&&!r.winner?'on':''}">${nm(1)}${me===1?' (تو)':''}</span>
+      <span class="pl c2 ${r.game==='ttt'&&r.turn===2&&!r.winner?'on':''}">${nm(2)}${me===2?' (تو)':''}</span>
+    </div>
+    ${body}
+    <div class="row" style="margin-top:18px">
+      ${r.p2 && (r.winner || r.game==='rps') ? '<button id="again">شروع دوباره</button>' : ''}
+      <button class="alt" id="leave">خروج</button>
+    </div>`;
+
+  app.querySelectorAll('.cell').forEach(b => b.onclick = () => playCell(+b.dataset.i));
+  app.querySelectorAll('.choice').forEach(b => b.onclick = () => pick(b.dataset.m));
+  const again = document.getElementById('again'); if(again) again.onclick = rematch;
+  document.getElementById('leave').onclick = leave;
+}
+
+renderLobby();
+</script>
+</body>
+</html>
