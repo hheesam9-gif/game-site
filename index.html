@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>میدان بازی</title>
+<meta name="theme-color" content="#0D1230">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -121,6 +122,19 @@
   @keyframes rise{from{opacity:1;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-280px) scale(1.5)}}
   @keyframes fade{0%,80%{opacity:1}100%{opacity:0}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  #app{position:relative;z-index:1}
+body::before{content:'';position:fixed;inset:-20%;z-index:0;pointer-events:none;
+  background:radial-gradient(500px 400px at 20% 20%,#FCA31122,transparent 70%),radial-gradient(500px 400px at 80% 70%,#5EEAD422,transparent 70%);
+  animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(6%,4%) scale(1.15)}}
+button:not(.alt):not(.choice):not(.hole):not(.cell):hover:not(:disabled){box-shadow:0 0 22px #FCA31166}
+.game{transition:transform .2s,border-color .2s}
+.game:hover{transform:translateY(-3px);border-color:var(--p1)}
+.status.mine{text-shadow:0 0 18px #FCA31188}
+.status.win{font-size:24px;text-shadow:0 0 22px #5EEAD488}
+.timer{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin:0 auto 4px;max-width:360px}
+.timer i{display:block;height:100%;background:var(--p1);transform-origin:right;animation:tm 25s linear forwards}
+@keyframes tm{to{transform:scaleX(0)}}
 </style>
 </head>
 <body>
@@ -138,7 +152,10 @@ const $ = s => document.querySelector(s);
 const app = $('#app');
 
 const myId = localStorage.getItem('pid') || (localStorage.setItem('pid', crypto.randomUUID()), localStorage.getItem('pid'));
-let room = null, me = 0, channel = null, resolving = false, err = '';
+let room = null, me = 0, channel = null, resolving = false, err = '', dcTimer = null, turnT = null, botT = null;
+const BOT = '00000000-0000-0000-0000-000000000000';
+const buzz = p => { try{ if(!muted && navigator.vibrate) navigator.vibrate(p); }catch(e){} };
+const timerBar = r => r.winner ? '' : '<div class="timer"><i></i></div>';
 let oppOnline = false, prevBoard = null, shownRound = -1;
 let muted = localStorage.getItem('muted') === '1';
 
@@ -220,7 +237,8 @@ function sendReact(e){
   if(channel) channel.send({type:'broadcast', event:'react', payload:{e}});
 }
 function copyInvite(){
-  const url = location.origin + location.pathname + '?room=' + room.code;
+const url = location.origin + location.pathname + '?room=' + room.code;
+  if(navigator.share && /Mobi|Android/i.test(navigator.userAgent)){ navigator.share({ title:'میدان بازی', text:'بیا بازی کنیم!', url }).catch(() => {}); return; }
   if(navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('لینک دعوت کپی شد')).catch(() => prompt('این لینک رو کپی کن:', url));
   else prompt('این لینک رو کپی کن:', url);
 }
@@ -256,13 +274,18 @@ async function quickMatch(game){
     const u = await sb.from('rooms').update({ p2:myId, n2:name }).eq('code', r.code).is('p2', null).select();
     if(u.data && u.data.length) return enter(u.data[0]);
   }
-  createRoom(game, true);
+  await createRoom(game, true);
+  const code = room && room.code;
+  setTimeout(async () => {
+    if(!room || room.code !== code || room.p2) return;
+    await sb.from('rooms').update({ p2: BOT, n2: 'ربات 🤖' }).eq('code', code).is('p2', null);
+  }, 8000);
 }
 
 async function joinRoom(){
   const name = getName(); if(!name) return;
-  const code = ($('#code').value || '').trim();
-  if(!code) return showErr('کد اتاق رو بنویس');
+  const code = ($('#code').value || '').trim().replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+  if(!/^\d{4}$/.test(code)) return showErr('کد باید ۴ رقم باشه');
   let { data } = await sb.from('rooms').select().eq('code', code).maybeSingle();
   if(!data) return showErr('اتاقی با این کد پیدا نشد');
   if(data.p1 !== myId && data.p2 !== myId){
@@ -285,21 +308,18 @@ function enter(r){
       if(JSON.stringify(prev) === JSON.stringify(next)){ afterUpdate(); return; }
       room = next; onRoomChange(prev, next); afterUpdate(); renderGame();
     })
-.on('presence', { event:'sync' }, () => {
-  const was = oppOnline;
-  oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId);
-  paintPresence();
-  clearTimeout(dcTimer);
-  if(was && !oppOnline && room && room.p2 && !room.winner){
-    dcTimer = setTimeout(async () => {
-      if(!oppOnline && !room.winner){
-        toast('حریف قطع شد، تو برنده‌ای!');
-        const s = 's'+me;
-        await sb.from('rooms').update({ winner: me, [s]: room[s]+1 }).eq('code', room.code);
+    .on('presence', { event:'sync' }, () => {
+      const was = oppOnline;
+      oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId) || (room && room.p2 === BOT);
+      paintPresence(); clearTimeout(dcTimer);
+      if(was && !oppOnline && room && room.p2 && !room.winner){
+        dcTimer = setTimeout(async () => {
+          if(oppOnline || !room || room.winner) return;
+          toast('حریف قطع شد، تو برنده‌ای!');
+          await sb.from('rooms').update({ winner: me, ['s'+me]: room['s'+me] + 1 }).eq('code', room.code).eq('winner', 0);
+        }, 15000);
       }
-    }, 15000);
-  }
-})
+    })
     .on('broadcast', { event:'react' }, ({ payload }) => { floatEmoji(payload.e); sfx.react(); })
     .subscribe(s => { if(s === 'SUBSCRIBED'){ channel.track({ at: Date.now() }); sync(); } });
   afterUpdate(); renderGame();
@@ -318,7 +338,7 @@ function leave(){
 
 function paintPresence(){
   document.querySelectorAll('.pl[data-p]').forEach(el => {
-    el.classList.toggle('off', +el.dataset.p !== me && !oppOnline);
+    el.classList.toggle('off', +el.dataset.p !== me && !oppOnline && !(room && room.p2 === BOT));
   });
 }
 
@@ -392,8 +412,57 @@ async function pick(m){
 }
 
 // فقط بازیکن ۱ نتیجه‌ی هر دست رو حساب می‌کنه تا امتیاز دوبار ثبت نشه
+function botThink(r){
+  if(!r || r.p2 !== BOT || me !== 1 || r.winner) return;
+  clearTimeout(botT);
+  if(r.game === 'rps'){
+    if(r.m1 && !r.m2) botT = setTimeout(() => sb.from('rooms').update({ m2: Object.keys(EMOJI)[Math.random()*3|0] }).eq('code', r.code).is('m2', null).then(() => {}), 700);
+    return;
+  }
+  if(r.turn === 2) botT = setTimeout(botMove, 650);
+}
+
+async function botMove(){
+  const r = room;
+  if(!r || r.winner || r.turn !== 2 || r.p2 !== BOT) return;
+  const arr = r.board.split(''), free = arr.map((c,i) => c==='.' ? i : -1).filter(i => i>=0);
+  let idx;
+  if(r.game === 'ttt'){
+    const t = ch => free.find(i => WINS.some(l => l.includes(i) && l.every(j => j===i || arr[j]===ch)));
+    idx = t('O') ?? t('X') ?? (arr[4]==='.' ? 4 : free[Math.random()*free.length|0]);
+  } else {
+    const drop = c => { for(let i=ROWS-1; i>=0; i--) if(arr[i*COLS+c]==='.') return i*COLS+c; return -1; };
+    const cols = [...Array(COLS).keys()].filter(c => drop(c) >= 0);
+    const wins = (c, ch) => { const b = arr.slice(); b[drop(c)] = ch; return checkC4(b).w === (ch==='X' ? 1 : 2); };
+    const c = cols.find(c => wins(c,'O')) ?? cols.find(c => wins(c,'X')) ??
+              cols.sort((a,b) => Math.abs(a-3) - Math.abs(b-3) + Math.random() - .5)[0];
+    idx = drop(c);
+  }
+  arr[idx] = 'O';
+  const board = arr.join(''), res = r.game==='ttt' ? checkTTT(board) : checkC4(board);
+  const upd = { board, turn:1, winner:res.w };
+  if(res.w===1 || res.w===2) upd['s'+res.w] = r['s'+res.w] + 1;
+  const prev = room; room = { ...r, ...upd }; onRoomChange(prev, room); renderGame();
+  const { data } = await sb.from('rooms').update(upd).eq('code', r.code).eq('board', r.board).select();
+  if(!data || !data.length) sync();
+}
+
+function autoMove(){
+  const r = room;
+  if(!r || !r.p2 || r.winner || r.turn !== me || r.game === 'rps') return;
+  toast('وقت تموم شد، حرکت خودکار');
+  if(r.game === 'ttt'){
+    const f = [...r.board].map((c,i) => c==='.' ? i : -1).filter(i => i>=0);
+    playCell(f[Math.random()*f.length|0]);
+  } else {
+    const c = [...Array(COLS).keys()].filter(c => r.board[c]==='.');
+    playCol(c[Math.random()*c.length|0]);
+  }
+}
+
 async function afterUpdate(){
   const r = room;
+  botThink(r);
   if(r && r.game==='rps' && me===1 && r.m1 && r.m2 && !resolving && !r.winner){
     resolving = true;
     const a = r.m1, b = r.m2, res = a===b ? 3 : (BEATS[a]===b ? 1 : 2);
@@ -410,7 +479,7 @@ async function rematch(){
   const r = room; let upd;
   if(r.game === 'rps') upd = { m1:null, m2:null, s1:0, s2:0, round:1, winner:0, last_m1:null, last_m2:null, last_res:null };
   else { const nr = r.round + 1; upd = { board:blank(r.game), turn: nr%2===1 ? 1 : 2, winner:0, round:nr }; }
-  await sb.from('rooms').update(upd).eq('code', r.code);
+  await sb.from('rooms').update(upd).eq('code', r.code).neq('winner', 0);
 }
 
 /* ---------- نمایش: لابی ---------- */
@@ -458,7 +527,7 @@ function viewTTT(r, opp, nm){
                : c==='O' ? `<svg class="mark o${isNew?' new':''}" viewBox="0 0 100 100"><circle pathLength="100" cx="50" cy="50" r="27"/></svg>` : '';
     return `<button class="cell${win.includes(i)?' win':''}" data-i="${i}" aria-label="خانه ${i+1}" ${c!=='.'||over||r.turn!==me?'disabled':''}>${mark}</button>`;
   }).join('');
-  return `<div class="status ${cls}">${st}</div><div class="board3">${cells}</div>`;
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div><div class="board3">${cells}</div>`;
 }
 
 function viewC4(r, opp, nm){
@@ -475,7 +544,7 @@ function viewC4(r, opp, nm){
     const disc = c==='.' ? '' : `<span class="disc ${c==='X'?'a':'b'}${isNew?' drop':''}${win.includes(i)?' win':''}"></span>`;
     cells += `<button class="hole" data-c="${col}" aria-label="ستون ${col+1}" ${over||r.turn!==me||full?'disabled':''}>${disc}</button>`;
   }
-  return `<div class="status ${cls}">${st}</div><div class="c4">${cells}</div>`;
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div><div class="c4">${cells}</div>`;
 }
 
 function viewRPS(r, opp, nm){
@@ -510,7 +579,7 @@ function renderGame(){
 
   const turnOn = k => r.game !== 'rps' && !r.winner && r.turn === k;
   const players = r.p2 ? `<div class="players">${[1,2].map(k =>
-    `<div class="pl c${k}${turnOn(k)?' on':''}${k!==me&&!oppOnline?' off':''}" data-p="${k}"><i class="dot"></i><span class="nmv">${nm(k)}${k===me?' (تو)':''}</span><b class="sc">${r['s'+k]}</b></div>`).join('')}</div>` : '';
+    `<div class="pl c${k}${turnOn(k)?' on':''}${k!==me&&!oppOnline&&r.p2!==BOT?' off':''}" data-p="${k}"><i class="dot"></i><span class="nmv">${nm(k)}${k===me?' (تو)':''}</span><b class="sc">${r['s'+k]}</b></div>`).join('')}</div>` : '';
 
   app.innerHTML = `
     <div class="topbar">
@@ -532,13 +601,14 @@ function renderGame(){
   const inv = $('#inv'); if(inv) inv.onclick = copyInvite;
   const again = $('#again'); if(again) again.onclick = rematch;
 
-  prevBoard = r.board; shownRound = r.round;
+prevBoard = r.board; shownRound = r.round;
+  clearTimeout(turnT);
+  if(r.p2 && !r.winner && r.game !== 'rps' && r.turn === me) turnT = setTimeout(autoMove, 25000);
 }
 
 /* ---------- شروع ---------- */
 (async function init(){
-  // پاک کردن اتاق‌های قدیمی‌تر از ۲۴ ساعت
-  sb.from('rooms').delete().lt('created_at', new Date(Date.now() - 864e5).toISOString()).then(() => {}, () => {});
+
   const inv = new URLSearchParams(location.search).get('room');
   const saved = localStorage.getItem('room');
   if(saved && !inv){
