@@ -285,9 +285,21 @@ function enter(r){
       if(JSON.stringify(prev) === JSON.stringify(next)){ afterUpdate(); return; }
       room = next; onRoomChange(prev, next); afterUpdate(); renderGame();
     })
-    .on('presence', { event:'sync' }, () => {
-      oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId); paintPresence();
-    })
+.on('presence', { event:'sync' }, () => {
+  const was = oppOnline;
+  oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId);
+  paintPresence();
+  clearTimeout(dcTimer);
+  if(was && !oppOnline && room && room.p2 && !room.winner){
+    dcTimer = setTimeout(async () => {
+      if(!oppOnline && !room.winner){
+        toast('حریف قطع شد، تو برنده‌ای!');
+        const s = 's'+me;
+        await sb.from('rooms').update({ winner: me, [s]: room[s]+1 }).eq('code', room.code);
+      }
+    }, 15000);
+  }
+})
     .on('broadcast', { event:'react' }, ({ payload }) => { floatEmoji(payload.e); sfx.react(); })
     .subscribe(s => { if(s === 'SUBSCRIBED'){ channel.track({ at: Date.now() }); sync(); } });
   afterUpdate(); renderGame();
