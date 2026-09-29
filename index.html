@@ -3,231 +3,544 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>بازی آنلاین دو نفره</title>
+<title>میدان بازی</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
   :root{
-    --bg:#14213D; --surface:#1F2E52; --line:#33456f; --text:#F1F5F9; --muted:#9db0d3;
-    --p1:#FCA311; --p2:#5EEAD4; --danger:#ff7a7a;
+    --bg:#0D1230; --surface:#1B2352; --surface2:#232d66; --line:#2C3870;
+    --text:#F1F5F9; --muted:#93A4CF; --p1:#FCA311; --p2:#5EEAD4; --danger:#ff7a7a;
   }
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:'Vazirmatn',Tahoma,sans-serif;display:flex;justify-content:center;padding:20px}
-  #app{width:100%;max-width:440px}
-  h1{font-size:28px;font-weight:900;margin:8px 0 20px}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
-  label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
-  input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:16px}
-  button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700;background:var(--p1);color:#14213D}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{background:var(--bg)}
+  body{
+    margin:0;min-height:100vh;color:var(--text);
+    font-family:'Vazirmatn',Tahoma,sans-serif;
+    background:
+      radial-gradient(900px 500px at 50% -120px,#2a3a8c66,transparent 70%),
+      radial-gradient(#ffffff0d 1px,transparent 1px) 0 0/22px 22px,
+      var(--bg);
+    display:flex;justify-content:center;padding:18px 16px 48px;
+  }
+  #app{width:100%;max-width:460px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--p1);color:#14213D;transition:transform .12s,filter .12s,background .12s}
+  button:active:not(:disabled){transform:scale(.96)}
+  button:hover:not(:disabled){filter:brightness(1.08)}
   button.alt{background:transparent;color:var(--text);border:1px solid var(--line)}
-  button:disabled{opacity:.4;cursor:not-allowed}
+  button.alt:hover:not(:disabled){background:var(--surface)}
+  button:disabled{cursor:not-allowed}
   button:focus-visible,input:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+  input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:16px}
+  label{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
   .row{display:flex;gap:10px}
   .row>*{flex:1}
-  .msg{color:var(--danger);font-size:14px;min-height:20px;margin-top:8px}
-  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:15px}
-  .pl{padding:6px 12px;border-radius:999px;border:2px solid var(--line)}
-  .pl.on{border-color:currentColor}
-  .c1{color:var(--p1)} .c2{color:var(--p2)}
-  .code{font-size:40px;font-weight:900;letter-spacing:8px;text-align:center;direction:ltr;margin:6px 0}
-  .status{text-align:center;font-size:18px;font-weight:700;margin:14px 0;min-height:28px}
-  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr}
-  .cell{aspect-ratio:1;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:56px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0}
-  .cell.X{color:var(--p1)} .cell.O{color:var(--p2)}
-  .cell:disabled{opacity:1}
+  .msg{color:var(--danger);font-size:14px;min-height:22px;margin-top:6px;text-align:center}
+
+  /* لابی */
+  .top{display:flex;justify-content:space-between;align-items:center;margin:4px 0 4px}
+  .brand{font-size:32px;font-weight:900;letter-spacing:-.5px}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+  .icon{background:var(--surface);color:var(--text);border:1px solid var(--line);padding:8px 12px;font-size:18px}
+  .game{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+  .game h2{margin:0;font-size:18px}
+  .game p{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+  .game .ico{width:58px;height:58px;border-radius:16px;background:var(--bg);display:flex;align-items:center;justify-content:center;gap:2px;font-size:26px;font-weight:900}
+  .game .acts{grid-column:1/-1;display:flex;gap:10px;margin-top:10px}
+  .game .acts button{flex:1;padding:10px}
+  .mini{width:18px;height:18px;border-radius:50%;display:inline-block}
+  .mini.a{background:var(--p1)} .mini.b{background:var(--p2)}
+
+  /* بازی */
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+  .topbar .sm{padding:8px 12px;font-size:14px}
+  .chip{background:var(--surface);color:var(--text);border:1px solid var(--line);padding:8px 14px;font-size:14px;direction:rtl}
+  .players{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+  .pl{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:var(--surface);border:2px solid var(--line);min-width:0;transition:border-color .2s}
+  .pl.on.c1{border-color:var(--p1)} .pl.on.c2{border-color:var(--p2)}
+  .pl .nmv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+  .pl .sc{margin-inline-start:auto;font-size:22px;font-weight:900}
+  .c1 .sc{color:var(--p1)} .c2 .sc{color:var(--p2)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#4ade80;flex:none}
+  .pl.off .dot{background:#64748b}
+  .status{text-align:center;font-size:19px;font-weight:900;margin:14px 0;min-height:30px}
+  .status.mine{color:var(--p1)}
+  .status.win{color:var(--p2)}
+  .status.lose{color:var(--danger)}
+  .status.pulse{animation:pulse 1.4s ease-in-out infinite alternate}
+  .hint{text-align:center;color:var(--muted);font-size:13px;margin:-6px 0 8px}
+  .wait{text-align:center}
+  .code{font-size:52px;font-weight:900;letter-spacing:10px;direction:ltr;margin:4px 0 14px}
+
+  /* دوز */
+  .board3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr;max-width:360px;margin:0 auto}
+  .cell{aspect-ratio:1;border-radius:14px;background:var(--surface);border:1px solid var(--line);padding:14px;display:flex}
+  .cell:not(:disabled):hover{background:var(--surface2)}
+  .cell.win{background:#2f3c85;box-shadow:inset 0 0 0 2px var(--text)}
+  .mark{width:100%;height:100%;fill:none;stroke-width:11;stroke-linecap:round}
+  .mark path,.mark circle{stroke-dasharray:100;stroke-dashoffset:0}
+  .mark.x{stroke:var(--p1)} .mark.o{stroke:var(--p2)}
+  .mark.new path,.mark.new circle{animation:draw .4s ease-out backwards}
+
+  /* چهار در یک ردیف */
+  .c4{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;direction:ltr;overflow:hidden}
+  .hole{aspect-ratio:1;border-radius:50%;background:var(--bg);padding:0;position:relative;border:0}
+  .hole:not(:disabled):hover{box-shadow:0 0 0 3px var(--line)}
+  .disc{position:absolute;inset:0;border-radius:50%}
+  .disc.a{background:radial-gradient(circle at 35% 30%,#ffd98f,var(--p1) 62%)}
+  .disc.b{background:radial-gradient(circle at 35% 30%,#c3fff5,var(--p2) 62%)}
+  .disc.drop{animation:drop .55s cubic-bezier(.35,.9,.4,1.12)}
+  .disc.win{box-shadow:0 0 0 3px #fff;animation:pulse .7s ease-in-out infinite alternate}
+
+  /* سنگ کاغذ قیچی */
   .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .choice{font-size:44px;background:var(--surface);color:var(--text);border:1px solid var(--line);padding:16px 0}
+  .choice{font-size:46px;background:var(--surface);color:var(--text);border:1px solid var(--line);padding:18px 0}
+  .choice:not(:disabled):hover{transform:translateY(-4px);background:var(--surface2)}
   .choice.sel{border-color:var(--p1);box-shadow:0 0 0 2px var(--p1)}
-  .reveal{display:flex;justify-content:space-around;font-size:56px;margin:10px 0}
-  .score{display:flex;justify-content:space-around;font-size:22px;font-weight:900}
+  .choice:disabled:not(.sel){opacity:.45}
+  .reveal{display:flex;align-items:center;justify-content:space-around;margin:6px 0}
+  .rv{text-align:center;font-size:64px;line-height:1.1}
+  .rv small{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+  .rv.pop{animation:pop .5s cubic-bezier(.3,1.5,.5,1)}
+  .vs{font-size:26px;color:var(--muted)}
+
+  .reacts{display:flex;justify-content:center;gap:8px;margin-top:20px}
+  .reacts button{padding:8px 12px;font-size:22px;background:var(--surface);border:1px solid var(--line)}
+  .actions{display:flex;gap:10px;margin-top:16px}
+  .actions button{flex:1}
+
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+  .float{position:fixed;bottom:14%;font-size:46px;pointer-events:none;z-index:60;animation:rise 1.8s ease-out forwards}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:70;animation:fade 1.8s forwards}
+
+  @keyframes draw{from{stroke-dashoffset:100}}
+  @keyframes drop{from{transform:translateY(-560%)}}
+  @keyframes pop{from{transform:scale(.2) rotate(-25deg);opacity:0}}
+  @keyframes pulse{from{opacity:.7}to{opacity:1}}
+  @keyframes rise{from{opacity:1;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-280px) scale(1.5)}}
+  @keyframes fade{0%,80%{opacity:1}100%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div id="app"></div>
-
+<canvas id="fx"></canvas>
 
 <script>
-/* ============ ۱) اینجا رو با اطلاعات پروژه‌ی Supabase خودت عوض کن ============ */
+/* ============ اطلاعات Supabase (از قبل پر شده) ============ */
 const SUPABASE_URL = 'https://rfkvlmktvrlaovjgzirz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_TENuPLAmnQqEi_UcC4qWLg_CiMcWxB2';
-/* ============================================================================ */
+/* ========================================================== */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const app = document.getElementById('app');
+const $ = s => document.querySelector(s);
+const app = $('#app');
 
 const myId = localStorage.getItem('pid') || (localStorage.setItem('pid', crypto.randomUUID()), localStorage.getItem('pid'));
-let room = null, me = 0, channel = null, resolving = false, myPick = null, err = '';
+let room = null, me = 0, channel = null, resolving = false, err = '';
+let oppOnline = false, prevBoard = null, shownRound = -1;
+let muted = localStorage.getItem('muted') === '1';
 
 const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const COLS = 7, ROWS = 6;
 const EMOJI = {rock:'✊', paper:'✋', scissors:'✌️'};
 const BEATS = {rock:'scissors', paper:'rock', scissors:'paper'};
+const REACTS = ['😂','🔥','👏','😮','😡'];
 
-/* ---------- ورود به اتاق ---------- */
-async function createRoom(game){
-  const name = document.getElementById('name').value.trim();
-  if(!name){ err='اسمت رو بنویس'; return renderLobby(); }
-  localStorage.setItem('pname', name);
-  const code = String(Math.floor(1000 + Math.random()*9000));
-  const { data, error } = await sb.from('rooms').insert({ code, game, p1: myId, n1: name }).select().single();
-  if(error){ err='ساخت اتاق ناموفق بود: '+error.message; return renderLobby(); }
-  enter(data);
+const GAMES = [
+  {id:'ttt', title:'دوز', desc:'سه‌تا در یک ردیف بچین و ببر.',
+   icon:'<span style="color:var(--p1)">✕</span><span style="color:var(--p2)">○</span>'},
+  {id:'rps', title:'سنگ کاغذ قیچی', desc:'هرکی زودتر به ۳ برد برسه برنده‌ست.', icon:'✊'},
+  {id:'c4', title:'چهار در یک ردیف', desc:'مهره بنداز و چهارتا رو تو یه خط بچین.',
+   icon:'<i class="mini a"></i><i class="mini b"></i>'}
+];
+
+const blank = g => g==='c4' ? '.'.repeat(COLS*ROWS) : '.'.repeat(9);
+
+/* ---------- صدا ---------- */
+let actx;
+function tone(f, d=.12, type='sine', when=0, vol=.06){
+  if(muted) return;
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + when;
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d);
+  }catch(e){}
+}
+const sfx = {
+  move: () => tone(520,.09,'triangle'),
+  opp: () => tone(380,.09,'triangle'),
+  join: () => { tone(500,.1,'triangle'); tone(750,.14,'triangle',.1); },
+  reveal: () => tone(600,.12,'square',0,.03),
+  win: () => [523,659,784,1047].forEach((f,i)=>tone(f,.2,'triangle',i*.1)),
+  lose: () => [400,330,260].forEach((f,i)=>tone(f,.25,'sawtooth',i*.14,.035)),
+  draw: () => { tone(420,.14); tone(420,.14,'sine',.18); },
+  react: () => tone(880,.07,'sine',0,.04)
+};
+function toggleSound(){
+  muted = !muted; localStorage.setItem('muted', muted ? '1' : '0');
+  document.querySelectorAll('.snd').forEach(b => b.textContent = muted ? '🔇' : '🔊');
+}
+
+/* ---------- افکت‌ها ---------- */
+function confetti(){
+  const c = $('#fx'), x = c.getContext('2d');
+  c.width = innerWidth; c.height = innerHeight;
+  const cols = ['#FCA311','#5EEAD4','#F1F5F9','#ff7a7a','#a78bfa'];
+  const ps = Array.from({length:150}, () => ({
+    x: innerWidth/2, y: innerHeight*.35, vx: (Math.random()-.5)*15, vy: Math.random()*-14-4,
+    s: 5+Math.random()*7, c: cols[Math.random()*cols.length|0], r: Math.random()*6, vr: (Math.random()-.5)*.4
+  }));
+  let f = 0;
+  (function step(){
+    x.clearRect(0,0,c.width,c.height);
+    ps.forEach(p => {
+      p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      x.save(); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle = p.c;
+      x.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); x.restore();
+    });
+    if(++f < 160) requestAnimationFrame(step); else x.clearRect(0,0,c.width,c.height);
+  })();
+}
+function floatEmoji(e){
+  const el = document.createElement('div');
+  el.className = 'float'; el.textContent = e; el.style.left = (12 + Math.random()*72) + '%';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1800);
+}
+function toast(t){
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = t;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1800);
+}
+function sendReact(e){
+  floatEmoji(e); sfx.react();
+  if(channel) channel.send({type:'broadcast', event:'react', payload:{e}});
+}
+function copyInvite(){
+  const url = location.origin + location.pathname + '?room=' + room.code;
+  if(navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('لینک دعوت کپی شد')).catch(() => prompt('این لینک رو کپی کن:', url));
+  else prompt('این لینک رو کپی کن:', url);
+}
+function showErr(m){ err = m; const el = $('#msg'); if(el) el.textContent = m; }
+
+/* ---------- ساخت / ورود به اتاق ---------- */
+function getName(){
+  const n = (($('#name')||{}).value || '').trim();
+  if(!n){ showErr('اول اسمت رو بنویس'); return ''; }
+  localStorage.setItem('pname', n); return n;
+}
+
+async function createRoom(game, pub=false){
+  const name = getName(); if(!name) return;
+  for(let i=0; i<6; i++){
+    // اتاق‌های عمومی (حریف تصادفی) کدشون با ۹ شروع می‌شه
+    const n = pub ? 9000 + Math.floor(Math.random()*1000) : 1000 + Math.floor(Math.random()*8000);
+    const { data, error } = await sb.from('rooms')
+      .insert({ code:String(n), game, p1:myId, n1:name, board:blank(game) }).select().single();
+    if(!error) return enter(data);
+    if(error.code !== '23505'){ return showErr('ساخت اتاق ناموفق بود: ' + error.message); }
+  }
+  showErr('ساخت اتاق ناموفق بود، دوباره امتحان کن');
+}
+
+async function quickMatch(game){
+  const name = getName(); if(!name) return;
+  const since = new Date(Date.now() - 3*60*1000).toISOString();
+  const { data } = await sb.from('rooms').select()
+    .eq('game', game).is('p2', null).neq('p1', myId).gte('code','9000').gt('created_at', since)
+    .order('created_at', {ascending:false}).limit(5);
+  for(const r of (data || [])){
+    const u = await sb.from('rooms').update({ p2:myId, n2:name }).eq('code', r.code).is('p2', null).select();
+    if(u.data && u.data.length) return enter(u.data[0]);
+  }
+  createRoom(game, true);
 }
 
 async function joinRoom(){
-  const name = document.getElementById('name').value.trim();
-  const code = document.getElementById('code').value.trim();
-  if(!name){ err='اسمت رو بنویس'; return renderLobby(); }
-  if(!code){ err='کد اتاق رو بنویس'; return renderLobby(); }
-  localStorage.setItem('pname', name);
+  const name = getName(); if(!name) return;
+  const code = ($('#code').value || '').trim();
+  if(!code) return showErr('کد اتاق رو بنویس');
   let { data } = await sb.from('rooms').select().eq('code', code).maybeSingle();
-  if(!data){ err='اتاقی با این کد پیدا نشد'; return renderLobby(); }
+  if(!data) return showErr('اتاقی با این کد پیدا نشد');
   if(data.p1 !== myId && data.p2 !== myId){
-    if(data.p2){ err='این اتاق پر است'; return renderLobby(); }
-    const r = await sb.from('rooms').update({ p2: myId, n2: name }).eq('code', code).is('p2', null).select().single();
-    if(r.error){ err='ورود ناموفق بود'; return renderLobby(); }
+    if(data.p2) return showErr('این اتاق پر است');
+    const r = await sb.from('rooms').update({ p2:myId, n2:name }).eq('code', code).is('p2', null).select().single();
+    if(r.error) return showErr('ورود ناموفق بود');
     data = r.data;
   }
   enter(data);
 }
 
 function enter(r){
-  room = r; me = r.p1 === myId ? 1 : 2; myPick = null; err = '';
+  room = r; me = r.p1 === myId ? 1 : 2; err = ''; oppOnline = false; prevBoard = null; shownRound = -1;
+  localStorage.setItem('room', r.code);
+  if(location.search) history.replaceState(null, '', location.pathname);
   if(channel) sb.removeChannel(channel);
-  channel = sb.channel('room-' + r.code)
+  channel = sb.channel('room-' + r.code, { config:{ presence:{ key: myId } } })
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${r.code}` }, p => {
-      room = p.new;
-      if(!room.m1 && !room.m2) myPick = null;
-      afterUpdate(); renderGame();
+      const prev = room, next = p.new;
+      if(JSON.stringify(prev) === JSON.stringify(next)){ afterUpdate(); return; }
+      room = next; onRoomChange(prev, next); afterUpdate(); renderGame();
     })
-    .subscribe();
+    .on('presence', { event:'sync' }, () => {
+      oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId); paintPresence();
+    })
+    .on('broadcast', { event:'react' }, ({ payload }) => { floatEmoji(payload.e); sfx.react(); })
+    .subscribe(s => { if(s === 'SUBSCRIBED'){ channel.track({ at: Date.now() }); sync(); } });
   afterUpdate(); renderGame();
+}
+
+async function sync(){
+  if(!room) return;
+  const { data } = await sb.from('rooms').select().eq('code', room.code).maybeSingle();
+  if(data && JSON.stringify(data) !== JSON.stringify(room)){ room = data; renderGame(); afterUpdate(); }
 }
 
 function leave(){
   if(channel) sb.removeChannel(channel);
-  channel = null; room = null; me = 0; renderLobby();
+  channel = null; room = null; me = 0; localStorage.removeItem('room'); renderLobby();
 }
 
-/* ---------- منطق بازی ---------- */
+function paintPresence(){
+  document.querySelectorAll('.pl[data-p]').forEach(el => {
+    el.classList.toggle('off', +el.dataset.p !== me && !oppOnline);
+  });
+}
+
+function onRoomChange(p, n){
+  if(!p) return;
+  if(!p.p2 && n.p2) sfx.join();
+  if(n.game !== 'rps' && p.board !== n.board && n.turn === me && !n.winner) sfx.opp();
+  if(n.game === 'rps' && n.round > p.round && !n.winner) sfx.reveal();
+  if(!p.winner && n.winner){
+    if(n.winner === 3) sfx.draw();
+    else if(n.winner === me){ sfx.win(); confetti(); }
+    else sfx.lose();
+  }
+}
+
+/* ---------- منطق بازی‌ها ---------- */
 function checkTTT(b){
-  for(const [a,c,d] of WINS){ if(b[a]!=='.' && b[a]===b[c] && b[a]===b[d]) return b[a]==='X'?1:2; }
-  return b.includes('.') ? 0 : 3;
+  for(const l of WINS){
+    const [a,c,d] = l;
+    if(b[a] !== '.' && b[a] === b[c] && b[a] === b[d]) return { w: b[a]==='X'?1:2, line:l };
+  }
+  return { w: b.includes('.') ? 0 : 3, line:[] };
 }
 
-async function playCell(i){
-  if(room.winner || room.turn !== me || room.board[i] !== '.' || !room.p2) return;
-  const arr = room.board.split(''); arr[i] = me===1 ? 'X' : 'O';
-  const board = arr.join('');
-  await sb.from('rooms').update({ board, turn: me===1?2:1, winner: checkTTT(board) })
-    .eq('code', room.code).eq('board', room.board);
+function checkC4(b){
+  const D = [[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++){
+    const v = b[r*COLS+c]; if(v === '.') continue;
+    for(const [dr,dc] of D){
+      const er = r+3*dr, ec = c+3*dc;
+      if(er<0 || er>=ROWS || ec<0 || ec>=COLS) continue;
+      const line = [0,1,2,3].map(k => (r+k*dr)*COLS + (c+k*dc));
+      if(line.every(i => b[i] === v)) return { w: v==='X'?1:2, line };
+    }
+  }
+  return { w: b.includes('.') ? 0 : 3, line:[] };
+}
+
+async function commitMove(r, board){
+  const res = r.game==='ttt' ? checkTTT(board) : checkC4(board);
+  const upd = { board, turn: me===1?2:1, winner: res.w };
+  if(res.w===1 || res.w===2) upd['s'+res.w] = r['s'+res.w] + 1;
+  sfx.move();
+  const prev = room; room = { ...r, ...upd }; onRoomChange(prev, room); renderGame();
+  const { data } = await sb.from('rooms').update(upd).eq('code', r.code).eq('board', r.board).select();
+  if(!data || !data.length) sync();
+}
+
+function playCell(i){
+  const r = room;
+  if(!r.p2 || r.winner || r.turn !== me || r.board[i] !== '.') return;
+  const arr = r.board.split(''); arr[i] = me===1 ? 'X' : 'O';
+  commitMove(r, arr.join(''));
+}
+
+function playCol(c){
+  const r = room;
+  if(!r.p2 || r.winner || r.turn !== me) return;
+  let row = -1;
+  for(let i=ROWS-1; i>=0; i--){ if(r.board[i*COLS+c] === '.'){ row = i; break; } }
+  if(row < 0) return;
+  const arr = r.board.split(''); arr[row*COLS+c] = me===1 ? 'X' : 'O';
+  commitMove(r, arr.join(''));
 }
 
 async function pick(m){
-  if(!room.p2 || myPick) return;
-  myPick = m; renderGame();
-  await sb.from('rooms').update(me===1 ? { m1:m } : { m2:m }).eq('code', room.code);
+  if(!room.p2 || room.winner || room['m'+me]) return;
+  sfx.move();
+  room = { ...room, ['m'+me]: m }; renderGame();
+  await sb.from('rooms').update({ ['m'+me]: m }).eq('code', room.code);
 }
 
-// فقط بازیکن ۱ نتیجه‌ی هر دست سنگ‌کاغذ‌قیچی رو حساب می‌کنه تا امتیاز دوبار ثبت نشه
+// فقط بازیکن ۱ نتیجه‌ی هر دست رو حساب می‌کنه تا امتیاز دوبار ثبت نشه
 async function afterUpdate(){
-  if(room.game==='rps' && me===1 && room.m1 && room.m2 && !resolving){
+  const r = room;
+  if(r && r.game==='rps' && me===1 && r.m1 && r.m2 && !resolving && !r.winner){
     resolving = true;
-    const a = room.m1, b = room.m2;
-    const res = a===b ? 3 : (BEATS[a]===b ? 1 : 2);
+    const a = r.m1, b = r.m2, res = a===b ? 3 : (BEATS[a]===b ? 1 : 2);
+    const s1 = r.s1 + (res===1?1:0), s2 = r.s2 + (res===2?1:0);
+    const w = s1>=3 ? 1 : s2>=3 ? 2 : 0;
     await sb.from('rooms').update({
-      last_m1:a, last_m2:b, last_res:res,
-      s1: room.s1 + (res===1?1:0), s2: room.s2 + (res===2?1:0),
-      round: room.round + 1, m1:null, m2:null
-    }).eq('code', room.code).eq('round', room.round);
+      last_m1:a, last_m2:b, last_res:res, s1, s2, winner:w, round:r.round+1, m1:null, m2:null
+    }).eq('code', r.code).eq('round', r.round);
     resolving = false;
   }
 }
 
 async function rematch(){
-  const reset = room.game==='ttt'
-    ? { board:'.........', turn:1, winner:0 }
-    : { m1:null, m2:null, s1:0, s2:0, round:1, last_m1:null, last_m2:null, last_res:null };
-  myPick = null;
-  await sb.from('rooms').update(reset).eq('code', room.code);
+  const r = room; let upd;
+  if(r.game === 'rps') upd = { m1:null, m2:null, s1:0, s2:0, round:1, winner:0, last_m1:null, last_m2:null, last_res:null };
+  else { const nr = r.round + 1; upd = { board:blank(r.game), turn: nr%2===1 ? 1 : 2, winner:0, round:nr }; }
+  await sb.from('rooms').update(upd).eq('code', r.code);
 }
 
-/* ---------- نمایش ---------- */
+/* ---------- نمایش: لابی ---------- */
 function renderLobby(){
   app.innerHTML = `
-    <h1>بازی آنلاین دو نفره</h1>
+    <div class="top"><div class="brand">میدان بازی</div><button class="icon snd" aria-label="صدا">${muted?'🔇':'🔊'}</button></div>
+    <p class="sub">آنلاین با دوستت بازی کن. بدون ثبت‌نام.</p>
     <div class="card">
       <label for="name">اسمت</label>
-      <input id="name" maxlength="16" value="${localStorage.getItem('pname')||''}">
+      <input id="name" maxlength="16" autocomplete="off" value="${(localStorage.getItem('pname')||'').replace(/"/g,'')}">
     </div>
+    ${GAMES.map(g => `
+      <div class="game">
+        <div class="ico">${g.icon}</div>
+        <div><h2>${g.title}</h2><p>${g.desc}</p></div>
+        <div class="acts">
+          <button data-mk="${g.id}">اتاق بساز</button>
+          <button class="alt" data-qm="${g.id}">حریف تصادفی</button>
+        </div>
+      </div>`).join('')}
     <div class="card">
-      <label>یه اتاق بساز و کدش رو به دوستت بده</label>
-      <div class="row">
-        <button id="mk-ttt">دوز</button>
-        <button id="mk-rps">سنگ کاغذ قیچی</button>
-      </div>
-    </div>
-    <div class="card">
-      <label for="code">یا با کد وارد اتاق دوستت شو</label>
+      <label for="code">کد اتاق دوستت رو داری؟</label>
       <div class="row">
         <input id="code" inputmode="numeric" maxlength="4" placeholder="۴ رقمی" style="direction:ltr;text-align:center">
         <button class="alt" id="join">ورود</button>
       </div>
     </div>
-    <div class="msg">${err}</div>`;
-  document.getElementById('mk-ttt').onclick = () => createRoom('ttt');
-  document.getElementById('mk-rps').onclick = () => createRoom('rps');
-  document.getElementById('join').onclick = joinRoom;
+    <div class="msg" id="msg">${err}</div>`;
+  document.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => createRoom(b.dataset.mk));
+  document.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => quickMatch(b.dataset.qm));
+  $('#join').onclick = joinRoom;
+  document.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
+}
+
+/* ---------- نمایش: بازی ---------- */
+function viewTTT(r, opp, nm){
+  const res = checkTTT(r.board), win = (res.w===1||res.w===2) ? res.line : [];
+  const over = !!r.winner;
+  const st = r.winner===3 ? 'مساوی شد' : r.winner ? (r.winner===me ? '🎉 بردی!' : 'این دست رو باختی')
+           : (r.turn===me ? 'نوبت توئه' : `نوبت ${nm(opp)}`);
+  const cls = r.winner===me ? 'win' : (r.winner && r.winner!==3) ? 'lose' : (!over && r.turn===me ? 'mine' : '');
+  const cells = r.board.split('').map((c,i) => {
+    const isNew = prevBoard && prevBoard[i] !== c && c !== '.';
+    const mark = c==='X' ? `<svg class="mark x${isNew?' new':''}" viewBox="0 0 100 100"><path pathLength="100" d="M24 24L76 76M76 24L24 76"/></svg>`
+               : c==='O' ? `<svg class="mark o${isNew?' new':''}" viewBox="0 0 100 100"><circle pathLength="100" cx="50" cy="50" r="27"/></svg>` : '';
+    return `<button class="cell${win.includes(i)?' win':''}" data-i="${i}" aria-label="خانه ${i+1}" ${c!=='.'||over||r.turn!==me?'disabled':''}>${mark}</button>`;
+  }).join('');
+  return `<div class="status ${cls}">${st}</div><div class="board3">${cells}</div>`;
+}
+
+function viewC4(r, opp, nm){
+  const res = checkC4(r.board), win = (res.w===1||res.w===2) ? res.line : [];
+  const over = !!r.winner;
+  const st = r.winner===3 ? 'مساوی شد' : r.winner ? (r.winner===me ? '🎉 بردی!' : 'این دست رو باختی')
+           : (r.turn===me ? 'نوبت توئه، یه ستون انتخاب کن' : `نوبت ${nm(opp)}`);
+  const cls = r.winner===me ? 'win' : (r.winner && r.winner!==3) ? 'lose' : (!over && r.turn===me ? 'mine' : '');
+  let cells = '';
+  for(let i=0; i<COLS*ROWS; i++){
+    const c = r.board[i], col = i % COLS;
+    const isNew = prevBoard && prevBoard[i] !== c && c !== '.';
+    const full = r.board[col] !== '.';
+    const disc = c==='.' ? '' : `<span class="disc ${c==='X'?'a':'b'}${isNew?' drop':''}${win.includes(i)?' win':''}"></span>`;
+    cells += `<button class="hole" data-c="${col}" aria-label="ستون ${col+1}" ${over||r.turn!==me||full?'disabled':''}>${disc}</button>`;
+  }
+  return `<div class="status ${cls}">${st}</div><div class="c4">${cells}</div>`;
+}
+
+function viewRPS(r, opp, nm){
+  const over = !!r.winner, mine = r['m'+me], theirs = r['m'+opp];
+  const st = over ? (r.winner===me ? '🏆 برنده‌ی مسابقه شدی!' : 'مسابقه رو باختی')
+           : mine ? `${EMOJI[mine]} انتخاب شد، منتظر ${nm(opp)}…`
+           : theirs ? `${nm(opp)} انتخابش رو کرد، نوبت توئه` : 'انتخاب کن';
+  const cls = over ? (r.winner===me ? 'win' : 'lose') : (!mine ? 'mine' : 'pulse');
+  let last = '';
+  if(r.last_res){
+    const a = me===1 ? r.last_m1 : r.last_m2, b = me===1 ? r.last_m2 : r.last_m1;
+    const pop = r.round !== shownRound ? ' pop' : '';
+    const t = r.last_res===3 ? 'این دست مساوی شد' : (r.last_res===me ? 'این دست رو بردی' : 'این دست رو باختی');
+    last = `<div class="reveal"><div class="rv${pop}">${EMOJI[a]}<small>تو</small></div><div class="vs">×</div><div class="rv${pop}">${EMOJI[b]}<small>${nm(opp)}</small></div></div><div class="hint">${t}</div>`;
+  }
+  return `<div class="hint">اولین نفری که به ۳ برد برسه برنده‌ست</div>${last}<div class="status ${cls}">${st}</div>
+    <div class="choices">${Object.keys(EMOJI).map(k =>
+      `<button class="choice${mine===k?' sel':''}" data-m="${k}" aria-label="${k}" ${mine||over?'disabled':''}>${EMOJI[k]}</button>`).join('')}</div>`;
 }
 
 function renderGame(){
-  const r = room, opp = me===1 ? 2 : 1;
-  const nm = k => r['n'+k] || '...';
-  let body = '';
-
+  const r = room, opp = me===1 ? 2 : 1, nm = k => r['n'+k] || '…';
+  let body;
   if(!r.p2){
-    body = `<div class="card"><label>این کد رو به دوستت بده تا وارد بشه</label><div class="code">${r.code}</div></div>
-            <div class="status">منتظر بازیکن دوم…</div>`;
-  } else if(r.game==='ttt'){
-    let status;
-    if(r.winner===3) status = 'مساوی شد';
-    else if(r.winner) status = r.winner===me ? '🎉 بردی!' : 'باختی';
-    else status = r.turn===me ? 'نوبت توئه' : `نوبت ${nm(opp)}`;
-    body = `<div class="status">${status}</div>
-      <div class="board">${r.board.split('').map((c,i)=>
-        `<button class="cell ${c}" data-i="${i}" ${c!=='.'||r.winner||r.turn!==me?'disabled':''}>${c==='X'?'✕':c==='O'?'○':''}</button>`).join('')}</div>`;
-  } else {
-    const waiting = myPick ? `${EMOJI[myPick]} انتخاب شد، منتظر ${nm(opp)}…` : 'انتخاب کن';
-    let last = '';
-    if(r.last_res){
-      const mine = me===1 ? r.last_m1 : r.last_m2, theirs = me===1 ? r.last_m2 : r.last_m1;
-      const txt = r.last_res===3 ? 'مساوی' : (r.last_res===me ? 'دست قبل: بردی' : 'دست قبل: باختی');
-      last = `<div class="reveal"><span>${EMOJI[mine]}</span><span>${EMOJI[theirs]}</span></div><div class="status">${txt}</div>`;
-    }
-    body = `<div class="score"><span class="c1">${r.s1}</span><span class="c2">${r.s2}</span></div>
-      ${last}
-      <div class="status">${waiting}</div>
-      <div class="choices">${Object.keys(EMOJI).map(k=>
-        `<button class="choice ${myPick===k?'sel':''}" data-m="${k}" ${myPick?'disabled':''}>${EMOJI[k]}</button>`).join('')}</div>`;
-  }
+    const pub = r.code >= '9000';
+    body = `<div class="card wait"><label>${pub ? 'دنبال حریف می‌گردیم…' : 'این کد رو به دوستت بده'}</label>
+      <div class="code">${r.code}</div>${pub ? '' : '<button id="inv">کپی لینک دعوت</button>'}</div>
+      <div class="status pulse">منتظر بازیکن دوم…</div>`;
+  } else if(r.game === 'ttt') body = viewTTT(r, opp, nm);
+  else if(r.game === 'c4') body = viewC4(r, opp, nm);
+  else body = viewRPS(r, opp, nm);
+
+  const turnOn = k => r.game !== 'rps' && !r.winner && r.turn === k;
+  const players = r.p2 ? `<div class="players">${[1,2].map(k =>
+    `<div class="pl c${k}${turnOn(k)?' on':''}${k!==me&&!oppOnline?' off':''}" data-p="${k}"><i class="dot"></i><span class="nmv">${nm(k)}${k===me?' (تو)':''}</span><b class="sc">${r['s'+k]}</b></div>`).join('')}</div>` : '';
 
   app.innerHTML = `
-    <div class="bar">
-      <span class="pl c1 ${r.game==='ttt'&&r.turn===1&&!r.winner?'on':''}">${nm(1)}${me===1?' (تو)':''}</span>
-      <span class="pl c2 ${r.game==='ttt'&&r.turn===2&&!r.winner?'on':''}">${nm(2)}${me===2?' (تو)':''}</span>
+    <div class="topbar">
+      <button class="alt sm" id="leave">✕ خروج</button>
+      <button class="chip" id="cc">اتاق ${r.code}</button>
+      <button class="icon snd" aria-label="صدا">${muted?'🔇':'🔊'}</button>
     </div>
-    ${body}
-    <div class="row" style="margin-top:18px">
-      ${r.p2 && (r.winner || r.game==='rps') ? '<button id="again">شروع دوباره</button>' : ''}
-      <button class="alt" id="leave">خروج</button>
-    </div>`;
+    ${players}${body}
+    ${r.p2 ? `<div class="reacts">${REACTS.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>` : ''}
+    ${r.p2 && r.winner ? '<div class="actions"><button id="again">بازی دوباره</button></div>' : ''}`;
 
-  app.querySelectorAll('.cell').forEach(b => b.onclick = () => playCell(+b.dataset.i));
-  app.querySelectorAll('.choice').forEach(b => b.onclick = () => pick(b.dataset.m));
-  const again = document.getElementById('again'); if(again) again.onclick = rematch;
-  document.getElementById('leave').onclick = leave;
+  app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => playCell(+b.dataset.i));
+  app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => playCol(+b.dataset.c));
+  app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => pick(b.dataset.m));
+  app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => sendReact(b.dataset.e));
+  app.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
+  $('#leave').onclick = leave;
+  $('#cc').onclick = copyInvite;
+  const inv = $('#inv'); if(inv) inv.onclick = copyInvite;
+  const again = $('#again'); if(again) again.onclick = rematch;
+
+  prevBoard = r.board; shownRound = r.round;
 }
 
-renderLobby();
+/* ---------- شروع ---------- */
+(async function init(){
+  // پاک کردن اتاق‌های قدیمی‌تر از ۲۴ ساعت
+  sb.from('rooms').delete().lt('created_at', new Date(Date.now() - 864e5).toISOString()).then(() => {}, () => {});
+  const inv = new URLSearchParams(location.search).get('room');
+  const saved = localStorage.getItem('room');
+  if(saved && !inv){
+    const { data } = await sb.from('rooms').select().eq('code', saved).maybeSingle();
+    if(data && (data.p1 === myId || data.p2 === myId)) return enter(data);
+    localStorage.removeItem('room');
+  }
+  renderLobby();
+  if(inv){
+    $('#code').value = inv;
+    if(localStorage.getItem('pname')) joinRoom();
+    else showErr('اسمت رو بنویس و روی «ورود» بزن');
+  }
+})();
 </script>
 </body>
 </html>
