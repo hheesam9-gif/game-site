@@ -575,7 +575,7 @@ async function rematch(){
 function renderLobby(){
   app.className = 'lobby';
   app.innerHTML = `
-    <div class="top"><div class="brand">میدان بازی</div><button class="icon snd" aria-label="صدا">${muted?'🔇':'🔊'}</button></div>
+    <div class="top"><div class="brand">ܩیܥ‌‌ߊ‌ܔ ܢ̣ߊ‌ܝ̇‌ܨ</div><button class="icon snd" aria-label="صدا">${muted?'🔇':'🔊'}</button></div>
     <p class="sub">آنلاین با دوستت بازی کن. بدون ثبت‌نام.</p>
     ${(() => { const s = JSON.parse(localStorage.getItem('stats')||'{"w":0,"l":0,"d":0}');
   return `<p class="hint">🏆 ${s.w} برد · ${s.l} باخت · ${s.d} مساوی</p>`; })()}
