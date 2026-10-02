@@ -202,6 +202,18 @@ button{border-radius:14px}
 
 .choice{border-radius:22px;background:linear-gradient(145deg,#232d66,#1b2352);box-shadow:0 8px 20px #0006}
 .reacts button{border-radius:999px}
+  .g-ludo{--gc1:#6b4a0f;--gc2:#FCA311}
+.ludo-players{display:grid;gap:8px;margin-bottom:6px}
+.lp{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:var(--glass);border:2px solid var(--line);min-width:0;transition:box-shadow .2s,border-color .2s}
+.lp.on{border-color:var(--pc);box-shadow:0 0 22px color-mix(in srgb,var(--pc) 45%,transparent)}
+.lp .nmv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.lp .sc{margin-inline-start:auto;font-weight:900;color:var(--pc)}
+.ludo{display:block;width:100%;max-width:460px;margin:8px auto;direction:ltr;border-radius:22px;background:linear-gradient(160deg,#232d66,#1b2352);border:1px solid var(--edge);box-shadow:0 16px 40px #0008}
+.ludo .lc{fill:#ffffff14;stroke:#ffffff26;stroke-width:.04}
+.ludo .pc{stroke:#0d1230;stroke-width:.08}
+.ludo .pc.mv{cursor:pointer;stroke:#fff;stroke-width:.12;animation:pulse .6s ease-in-out infinite alternate}
+.dice{font-size:64px;line-height:1;text-align:center;margin:6px 0}
+.rollbtn{display:block;margin:10px auto;min-width:180px;font-size:18px}
 </style>
 </head>
 <body>
@@ -237,10 +249,12 @@ const GAMES = [
    icon:'<span style="color:var(--p1)">✕</span><span style="color:var(--p2)">○</span>'},
   {id:'rps', title:'سنگ کاغذ قیچی', desc:'هرکی زودتر به ۳ برد برسه برنده‌ست.', icon:'✊'},
   {id:'c4', title:'چهار در یک ردیف', desc:'مهره بنداز و چهارتا رو تو یه خط بچین.',
-   icon:'<i class="mini a"></i><i class="mini b"></i>'}
+   icon:'<i class="mini a"></i><i class="mini b"></i>'},
+  {id:'ludo', title:'منچ', desc:'۲ تا ۴ نفره، مهره‌هات رو به خونه برسون.', icon:'🎲'}
 ];
 
-const blank = g => g==='c4' ? '.'.repeat(COLS*ROWS) : '.'.repeat(9);
+const blank = g => g==='ludo' ? JSON.stringify({pc:[[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]],d:0,ld:0,lt:0,tr:0})
+  : g==='c4' ? '.'.repeat(COLS*ROWS) : '.'.repeat(9);
 
 /* ---------- صدا ---------- */
 let actx;
@@ -319,13 +333,13 @@ function getName(){
   localStorage.setItem('pname', n); return n;
 }
 
-async function createRoom(game, pub=false){
+async function createRoom(game, pub=false, maxp=2){
   const name = getName(); if(!name) return;
   for(let i=0; i<6; i++){
     // اتاق‌های عمومی (حریف تصادفی) کدشون با ۹ شروع می‌شه
     const n = pub ? 9000 + Math.floor(Math.random()*1000) : 1000 + Math.floor(Math.random()*8000);
     const { data, error } = await sb.from('rooms')
-      .insert({ code:String(n), game, p1:myId, n1:name, board:blank(game) }).select().single();
+.insert({ code:String(n), game, p1:myId, n1:name, board:blank(game), maxp }).select().single();
     if(!error) return enter(data);
     if(error.code !== '23505'){ return showErr('ساخت اتاق ناموفق بود: ' + error.message); }
   }
@@ -356,17 +370,20 @@ async function joinRoom(){
   if(!/^\d{4}$/.test(code)) return showErr('کد باید ۴ رقم باشه');
   let { data } = await sb.from('rooms').select().eq('code', code).maybeSingle();
   if(!data) return showErr('اتاقی با این کد پیدا نشد');
-  if(data.p1 !== myId && data.p2 !== myId){
-    if(data.p2) return showErr('این اتاق پر است');
-    const r = await sb.from('rooms').update({ p2:myId, n2:name }).eq('code', code).is('p2', null).select().single();
-    if(r.error) return showErr('ورود ناموفق بود');
-    data = r.data;
+  if(![data.p1, data.p2, data.p3, data.p4].includes(myId)){
+    const maxp = data.game === 'ludo' ? (data.maxp || 2) : 2;
+    let seat = 0;
+    for(let k=2; k<=maxp; k++){ if(!data['p'+k]){ seat = k; break; } }
+    if(!seat) return showErr('این اتاق پر است');
+    const r = await sb.from('rooms').update({ ['p'+seat]:myId, ['n'+seat]:name }).eq('code', code).is('p'+seat, null).select();
+    if(r.error || !r.data.length) return showErr('ورود ناموفق بود، دوباره امتحان کن');
+    data = r.data[0];
   }
   enter(data);
 }
 
 function enter(r){
-  room = r; me = r.p1 === myId ? 1 : 2; err = ''; oppOnline = false; prevBoard = null; shownRound = -1;
+  room = r; me = [r.p1, r.p2, r.p3, r.p4].indexOf(myId) + 1 || 2;err = ''; oppOnline = false; prevBoard = null; shownRound = -1;
   localStorage.setItem('room', r.code);
   if(location.search) history.replaceState(null, '', location.pathname);
   if(channel) sb.removeChannel(channel);
@@ -380,7 +397,7 @@ function enter(r){
       const was = oppOnline;
       oppOnline = Object.keys(channel.presenceState()).some(k => k !== myId) || (room && room.p2 === BOT);
       paintPresence(); clearTimeout(dcTimer);
-      if(was && !oppOnline && room && room.p2 && !room.winner){
+      if(was && !oppOnline && room && room.p2 && !room.winner && room.game !== 'ludo'){
         dcTimer = setTimeout(async () => {
           if(oppOnline || !room || room.winner) return;
           toast('حریف قطع شد، تو برنده‌ای!');
@@ -400,7 +417,7 @@ if(data && JSON.stringify(data) !== JSON.stringify(room)){ const prev = room; ro
 }
 
 function leave(){
-  if(room && room.p2 && room.p2!==BOT && !room.winner){
+  if(room && room.p2 && room.p2!==BOT && !room.winner && room.game !== 'ludo'){
     const o = me===1 ? 2 : 1;
     sb.from('rooms').update({ winner:o, ['s'+o]: room['s'+o]+1 }).eq('code', room.code).eq('winner', 0);
   }
@@ -415,6 +432,7 @@ function paintPresence(){
 
 function onRoomChange(p, n){
   if(!p) return;
+  if(n.game === 'ludo' && n.winner > 10) n = { ...n, winner: n.winner - 10 === me ? me : 99 };
   if(!p.p2 && n.p2) sfx.join();
   if(n.game !== 'rps' && p.board !== n.board && n.turn === me && !n.winner) sfx.opp();
   if(n.game === 'rps' && n.round > p.round && !n.winner) sfx.reveal();
@@ -566,7 +584,8 @@ if(r && r.game==='rps' && r.m1 && r.m2 && !resolving && !r.winner){
 
 async function rematch(){
   const r = room; let upd;
-  if(r.game === 'rps') upd = { m1:null, m2:null, s1:0, s2:0, round:1, winner:0, last_m1:null, last_m2:null, last_res:null };
+  if(r.game === 'ludo') upd = { board:blank('ludo'), turn:1, winner:0, round:r.round+1 };
+  else if(r.game === 'rps') upd = { m1:null, m2:null, s1:0, s2:0, round:1, winner:0, last_m1:null, last_m2:null, last_res:null };
   else { const nr = r.round + 1; upd = { board:blank(r.game), turn: nr%2===1 ? 1 : 2, winner:0, round:nr }; }
   await sb.from('rooms').update(upd).eq('code', r.code).neq('winner', 0);
 }
@@ -588,8 +607,12 @@ function renderLobby(){
         <div class="ico">${g.icon}</div>
         <div><h2>${g.title}</h2><p>${g.desc}</p></div>
         <div class="acts">
+          ${g.id==='ludo' ? `
+          <button data-mk="ludo" data-n="2">۲ نفره</button>
+          <button data-mk="ludo" data-n="3">۳ نفره</button>
+          <button data-mk="ludo" data-n="4">۴ نفره</button>` : `
           <button data-mk="${g.id}">اتاق بساز</button>
-          <button class="alt" data-qm="${g.id}">حریف تصادفی</button>
+          <button class="alt" data-qm="${g.id}">حریف تصادفی</button>`}
         </div>
       </div>`).join('')}
     <div class="card">
@@ -600,7 +623,7 @@ function renderLobby(){
       </div>
     </div>
     <div class="msg" id="msg">${err}</div>`;
-  document.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => createRoom(b.dataset.mk));
+  document.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => createRoom(b.dataset.mk, false, +(b.dataset.n || 2)));  
   document.querySelectorAll('[data-qm]').forEach(b => b.onclick = () => quickMatch(b.dataset.qm));
   $('#join').onclick = joinRoom;
   document.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
@@ -658,6 +681,7 @@ function viewRPS(r, opp, nm){
 }
 
 function renderGame(){
+  if(room.game === 'ludo') return renderLudo();
   app.className = '';
   const r = room, opp = me===1 ? 2 : 1, nm = k => r['n'+k] || '…';
   let body;
@@ -698,7 +722,171 @@ prevBoard = r.board; shownRound = r.round;
   clearTimeout(turnT);
   if(r.p2 && !r.winner && r.game !== 'rps' && r.turn === me) turnT = setTimeout(autoMove, 25000);
 }
+/* ---------- منچ ---------- */
+const LUDO_TRACK = [[0,4],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[4,1],[4,0],[5,0],[6,0],[6,1],[6,2],[6,3],[6,4],[7,4],[8,4],[9,4],[10,4],[10,5],[10,6],[9,6],[8,6],[7,6],[6,6],[6,7],[6,8],[6,9],[6,10],[5,10],[4,10],[4,9],[4,8],[4,7],[4,6],[3,6],[2,6],[1,6],[0,6],[0,5]];
+const LUDO_HOME = [
+  [[1,5],[2,5],[3,5],[4,5]],
+  [[5,1],[5,2],[5,3],[5,4]],
+  [[9,5],[8,5],[7,5],[6,5]],
+  [[5,9],[5,8],[5,7],[5,6]]];
+const LUDO_BASE = [
+  [[0,0],[1,0],[0,1],[1,1]],
+  [[9,0],[10,0],[9,1],[10,1]],
+  [[9,9],[10,9],[9,10],[10,10]],
+  [[0,9],[1,9],[0,10],[1,10]]];
+const LUDO_COL = ['#FCA311','#5EEAD4','#ff6b9d','#a78bfa'];
 
+// خونه‌ی شروع هر بازیکن روی مسیر ۴۰ خونه‌ای (تو بازی دونفره، حریف روبه‌روت می‌شینه)
+function ludoStart(r, k){ return (r.maxp || 2) === 2 ? (k === 1 ? 0 : 20) : (k - 1) * 10; }
+
+// پیشرفت مهره: -1 = تو خونه‌ی اول، 0..39 = مسیر، 40..43 = خونه‌ی نهایی
+function ludoXY(r, k, p, i){
+  const q = ludoStart(r, k) / 10;
+  if(p === -1) return LUDO_BASE[q][i];
+  if(p >= 40) return LUDO_HOME[q][p - 40];
+  return LUDO_TRACK[(ludoStart(r, k) + p) % 40];
+}
+
+function ludoMoves(r, s, k, d){
+  const mine = s.pc[k-1], out = [];
+  mine.forEach((p, i) => {
+    let np;
+    if(p === -1){ if(d !== 6) return; np = 0; }
+    else { np = p + d; if(np > 43) return; }
+    if(mine.includes(np)) return;
+    out.push(i);
+  });
+  return out;
+}
+
+function ludoApply(r, s, k, i){
+  const M = r.maxp || 2, pc = s.pc.map(a => a.slice());
+  const p = pc[k-1][i], np = p === -1 ? 0 : p + s.d;
+  pc[k-1][i] = np;
+  if(np <= 39){
+    const abs = (ludoStart(r, k) + np) % 40;
+    for(let o=1; o<=M; o++){
+      if(o === k) continue;
+      pc[o-1].forEach((q, j) => { if(q >= 0 && q <= 39 && (ludoStart(r, o) + q) % 40 === abs) pc[o-1][j] = -1; });
+    }
+  }
+  return pc;
+}
+
+async function ludoCommit(r, upd){
+  sfx.move();
+  const prev = room; room = { ...r, ...upd }; onRoomChange(prev, room); renderGame();
+  const { data } = await sb.from('rooms').update(upd).eq('code', r.code).eq('board', r.board).select();
+  if(!data || !data.length) sync();
+}
+
+async function ludoRoll(){
+  const r = room;
+  if(!r || r.game !== 'ludo' || r.winner || r.turn !== me) return;
+  const s = JSON.parse(r.board); if(s.d) return;
+  const M = r.maxp || 2, d = Math.floor(Math.random() * 6) + 1;
+  let upd;
+  if(ludoMoves(r, s, me, d).length){
+    upd = { board: JSON.stringify({ ...s, d, ld:d, lt:me }) };
+  } else if(s.pc[me-1].every(p => p === -1 || p >= 40) && (s.tr || 0) < 2){
+    // وقتی همه‌ی مهره‌ها تو خونه‌ان، سه بار شانس تاس داری
+    upd = { board: JSON.stringify({ ...s, d:0, ld:d, lt:me, tr:(s.tr || 0) + 1 }) };
+  } else {
+    upd = { board: JSON.stringify({ ...s, d:0, ld:d, lt:me, tr:0 }), turn: me % M + 1 };
+  }
+  ludoCommit(r, upd);
+}
+
+async function ludoMove(i){
+  const r = room;
+  if(!r || r.game !== 'ludo' || r.winner || r.turn !== me) return;
+  const s = JSON.parse(r.board); if(!s.d) return;
+  if(!ludoMoves(r, s, me, s.d).includes(i)) return;
+  const M = r.maxp || 2, pc = ludoApply(r, s, me, i);
+  const won = pc[me-1].every(p => p >= 40);
+  ludoCommit(r, {
+    board: JSON.stringify({ pc, d:0, ld:s.d, lt:me, tr:0 }),
+    turn: s.d === 6 ? me : me % M + 1,   // شش بیاری، دوباره نوبت توئه
+    winner: won ? 10 + me : 0
+  });
+}
+
+function ludoAuto(){
+  const r = room;
+  if(!r || r.game !== 'ludo' || r.winner || r.turn !== me) return;
+  toast('وقت تموم شد، حرکت خودکار');
+  const s = JSON.parse(r.board);
+  if(!s.d) return ludoRoll();
+  ludoMove(ludoMoves(r, s, me, s.d)[0]);
+}
+
+function renderLudo(){
+  app.className = '';
+  const r = room, M = r.maxp || 2, s = JSON.parse(r.board);
+  const seats = [...Array(M).keys()].map(i => i + 1);
+  const full = seats.every(k => r['p' + k]);
+  const nm = k => r['n' + k] || '…';
+  const over = r.winner > 10, wk = r.winner - 10;
+  const myTurn = full && !over && r.turn === me;
+  const moves = (myTurn && s.d) ? ludoMoves(r, s, me, s.d) : [];
+
+  const players = full ? `<div class="ludo-players" style="grid-template-columns:repeat(${M},1fr)">${seats.map(k =>
+    `<div class="lp${!over && r.turn === k ? ' on' : ''}" style="--pc:${LUDO_COL[k-1]}"><i class="dot" style="background:${LUDO_COL[k-1]}"></i><span class="nmv">${nm(k)}${k===me?' (تو)':''}</span><b class="sc">${s.pc[k-1].filter(p => p >= 40).length}</b></div>`).join('')}</div>` : '';
+
+  let st, cls;
+  if(over){ st = wk === me ? '🏆 برنده شدی!' : `${nm(wk)} برنده شد`; cls = wk === me ? 'win' : 'lose'; }
+  else if(r.turn === me){ st = s.d ? 'یه مهره انتخاب کن' : 'نوبت توئه، تاس بنداز'; cls = 'mine'; }
+  else { st = `نوبت ${nm(r.turn)}`; cls = ''; }
+
+  let svg = '<svg class="ludo" viewBox="0 0 11 11">';
+  LUDO_TRACK.forEach(([x, y]) => svg += `<circle class="lc" cx="${x+.5}" cy="${y+.5}" r=".42"/>`);
+  seats.forEach(k => {
+    const q = ludoStart(r, k) / 10, col = LUDO_COL[k-1];
+    const [sx, sy] = LUDO_TRACK[ludoStart(r, k)];
+    svg += `<circle cx="${sx+.5}" cy="${sy+.5}" r=".42" fill="${col}" fill-opacity=".45"/>`;
+    LUDO_HOME[q].forEach(([x, y]) => svg += `<circle cx="${x+.5}" cy="${y+.5}" r=".38" fill="${col}" fill-opacity=".25"/>`);
+    LUDO_BASE[q].forEach(([x, y]) => svg += `<circle cx="${x+.5}" cy="${y+.5}" r=".42" fill="${col}" fill-opacity=".14"/>`);
+  });
+  seats.forEach(k => s.pc[k-1].forEach((p, i) => {
+    const [x, y] = ludoXY(r, k, p, i), mv = k === me && moves.includes(i);
+    svg += `<circle class="pc${mv ? ' mv' : ''}" data-pi="${i}" cx="${x+.5}" cy="${y+.5}" r=".33" fill="${LUDO_COL[k-1]}"/>`;
+  }));
+  svg += '</svg>';
+
+  const dice = s.ld ? `<div class="dice" style="color:${LUDO_COL[s.lt-1]}">${'⚀⚁⚂⚃⚄⚅'[s.ld-1]}<small style="display:block;font-size:13px;color:var(--muted)">${nm(s.lt)}</small></div>` : '';
+
+  let body;
+  if(!full){
+    const n = seats.filter(k => r['p' + k]).length;
+    body = `<div class="card wait"><label>این کد رو به دوستانت بده (${n} از ${M} نفر)</label>
+      <div class="code">${r.code}</div><button id="inv">کپی لینک دعوت</button></div>
+      <div class="status pulse">منتظر بقیه‌ی بازیکن‌ها…</div>`;
+  } else {
+    body = `${timerBar(r)}<div class="status ${cls}">${st}</div>${svg}${dice}${myTurn && !s.d ? '<button class="rollbtn" id="roll">🎲 تاس بنداز</button>' : ''}`;
+  }
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="alt sm" id="leave">✕ خروج</button>
+      <button class="chip" id="cc">اتاق ${r.code}</button>
+      <button class="icon snd" aria-label="صدا">${muted?'🔇':'🔊'}</button>
+    </div>
+    ${players}${body}
+    ${full ? `<div class="reacts">${REACTS.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>` : ''}
+    ${full && over ? '<div class="actions"><button id="again">بازی دوباره</button></div>' : ''}`;
+
+  app.querySelectorAll('.pc.mv').forEach(c => c.onclick = () => ludoMove(+c.dataset.pi));
+  app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => sendReact(b.dataset.e));
+  app.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
+  $('#leave').onclick = leave;
+  $('#cc').onclick = copyInvite;
+  const inv = $('#inv'); if(inv) inv.onclick = copyInvite;
+  const roll = $('#roll'); if(roll) roll.onclick = ludoRoll;
+  const again = $('#again'); if(again) again.onclick = rematch;
+
+  clearTimeout(turnT);
+  if(myTurn) turnT = setTimeout(ludoAuto, 25000);
+}
 /* ---------- شروع ---------- */
 (async function init(){
 
@@ -706,7 +894,7 @@ prevBoard = r.board; shownRound = r.round;
   const saved = localStorage.getItem('room');
   if(saved && !inv){
     const { data } = await sb.from('rooms').select().eq('code', saved).maybeSingle();
-    if(data && (data.p1 === myId || data.p2 === myId)) return enter(data);
+    if(data && [data.p1, data.p2, data.p3, data.p4].includes(myId)) return enter(data);
     localStorage.removeItem('room');
   }
   renderLobby();
