@@ -236,6 +236,59 @@ button{border-radius:14px}
 .rollbtn{display:block;margin:6px auto 4px;min-width:200px;padding:14px 22px;font-size:19px;border-radius:18px;background:linear-gradient(135deg,#FCA311,#ff6b45);color:#1a1205;box-shadow:0 10px 28px #fca3115c;animation:rollpulse 1.1s ease-in-out infinite alternate}
 @keyframes rollpulse{to{transform:scale(1.06);box-shadow:0 14px 34px #fca31199}}
 .ludo-hint{text-align:center;color:var(--muted);font-size:13px;margin:6px 0}
+.g-nim{--gc1:#7a4a0f;--gc2:#ffb347}
+.g-dots{--gc1:#14506b;--gc2:#38bdf8}
+.g-num{--gc1:#6b1d3a;--gc2:#fb7185}
+.g-word{--gc1:#1f5a3a;--gc2:#4ade80}
+
+/* نیم */
+.nim{display:grid;gap:14px;direction:ltr;margin:14px auto;max-width:420px}
+.nrow{display:flex;align-items:center;gap:7px}
+.stick{flex:none;width:26px;height:66px;padding:0;border-radius:9px;background:linear-gradient(180deg,#ffd98f,#FCA311 60%,#c97a00);box-shadow:0 6px 12px #0006,inset 0 2px 0 #fff6;transition:transform .15s,opacity .15s,filter .15s}
+.stick:disabled{cursor:default}
+.stick:not(:disabled):hover,.stick:not(:disabled):hover~.stick{transform:translateY(-8px) scale(.9);opacity:.35;filter:grayscale(.6)}
+.ncnt{margin-inline-start:auto;color:var(--muted);font-weight:900;font-size:18px}
+
+/* نقطه‌بازی */
+.dscore{display:flex;justify-content:space-between;max-width:440px;margin:0 auto 4px;font-weight:900}
+.dscore .c1{color:var(--p1)} .dscore .c2{color:var(--p2)}
+.dots{display:block;width:100%;max-width:440px;margin:6px auto;direction:ltr;border-radius:22px;background:linear-gradient(160deg,#232d66,#1b2352);border:1px solid var(--edge);box-shadow:0 14px 34px #0007}
+.dots circle{fill:#dbe4ff}
+.dots .ghost{stroke:#ffffff14;stroke-width:1.2;stroke-linecap:round}
+.dots .hit{stroke:transparent;stroke-width:7;stroke-linecap:round;pointer-events:stroke}
+.dots .eg.on{cursor:pointer}
+.dots .eg.on:hover .ghost{stroke:#fff;stroke-opacity:.8}
+.dots .ln{stroke-width:1.9;stroke-linecap:round}
+.dots .ln.a{stroke:var(--p1)} .dots .ln.b{stroke:var(--p2)}
+.dots .ln.new{stroke-dasharray:20;animation:ldraw .35s ease-out backwards}
+.dots .bx{fill-opacity:.4;transform-box:fill-box;transform-origin:center}
+.dots .bx.a{fill:var(--p1)} .dots .bx.b{fill:var(--p2)}
+.dots .bx.new{animation:bxin .4s ease-out backwards}
+@keyframes ldraw{from{stroke-dashoffset:20}}
+@keyframes bxin{from{transform:scale(.2);opacity:0}}
+
+/* حدس عدد */
+.nbar{position:relative;height:14px;border-radius:99px;background:#ffffff14;margin:22px auto 4px;max-width:420px;direction:ltr}
+.nbar i{position:absolute;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--p2),var(--p1));opacity:.8;transition:left .4s,width .4s}
+.nbar b{position:absolute;top:-5px;width:4px;height:24px;border-radius:2px;margin-left:-2px;box-shadow:0 0 0 1px #0d1230}
+.nbar b.m1{background:var(--p1)} .nbar b.m2{background:var(--p2)}
+.nrange{display:flex;justify-content:space-between;max-width:420px;margin:0 auto 12px;direction:ltr;color:var(--muted);font-size:12px}
+.glist{display:grid;gap:6px;max-width:420px;margin:12px auto}
+.gl{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--edge)}
+.gl b{font-size:20px;min-width:46px;direction:ltr}
+.gl.c1 b{color:var(--p1)} .gl.c2 b{color:var(--p2)}
+.gl em{margin-inline-start:auto;font-style:normal}
+
+/* حدس کلمه */
+.wordbox{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.wl{width:44px;height:56px;border-radius:12px;background:var(--glass);border:1px solid var(--edge);display:grid;place-items:center;font-size:30px;font-weight:900;box-shadow:0 6px 14px #0005}
+.wl.miss{color:var(--danger)}
+.lives{display:flex;justify-content:space-between;font-size:15px;margin:6px 0}
+.keys{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;max-width:440px;margin:0 auto}
+.key{padding:9px 0;font-size:18px;background:linear-gradient(145deg,#232d66,#1b2352);color:var(--text);border:1px solid var(--edge);border-radius:10px}
+.key.ok{background:#14b8a6;color:#04201c}
+.key.bad{background:#7f1d1d;color:#fecaca;opacity:.6}
+.key:disabled:not(.ok):not(.bad){opacity:.5}
 </style>
 </head>
 <body>
@@ -272,11 +325,15 @@ const GAMES = [
   {id:'rps', title:'سنگ کاغذ قیچی', desc:'هرکی زودتر به ۳ برد برسه برنده‌ست.', icon:'✊'},
   {id:'c4', title:'چهار در یک ردیف', desc:'مهره بنداز و چهارتا رو تو یه خط بچین.',
    icon:'<i class="mini a"></i><i class="mini b"></i>'},
-  {id:'ludo', title:'منچ', desc:'۲ تا ۴ نفره، مهره‌هات رو به خونه برسون.', icon:'🎲'}
+  {id:'ludo', title:'منچ', desc:'۲ تا ۴ نفره، مهره‌هات رو به خونه برسون.', icon:'🎲'},
+  {id:'nim', title:'نیم', desc:'چوب بردار؛ هرکی آخرین چوب رو برداره می‌بره.', icon:'🥢'},
+  {id:'dots', title:'نقطه‌بازی', desc:'خط بکش و خونه ببند؛ هرکی بیشتر ببنده می‌بره.', icon:'🔲'},
+  {id:'num', title:'حدس عدد', desc:'یه عدد مخفی بین ۱ تا ۱۰۰؛ هرکی زودتر پیداش کنه می‌بره.', icon:'🎯'},
+  {id:'word', title:'حدس کلمه', desc:'حرف حدس بزن؛ هرکی کلمه رو کامل کنه می‌بره.', icon:'🔤'}
 ];
 
 const blank = g => g==='ludo' ? JSON.stringify({pc:[[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]],d:0,ld:0,lt:0,tr:0})
-  : g==='c4' ? '.'.repeat(COLS*ROWS) : '.'.repeat(9);
+  : NEWBLANK[g] ? NEWBLANK[g]() : g==='c4' ? '.'.repeat(COLS*ROWS) : '.'.repeat(9);
 
 /* ---------- صدا ---------- */
 let actx;
@@ -554,7 +611,7 @@ function tttBot(arr){
 }
 async function botMove(){
   const r = room;
-  if(!r || r.winner || r.turn !== 2 || r.p2 !== BOT) return;
+  if(BOTS[r.game]) return BOTS[r.game](r);
   const arr = r.board.split(''), free = arr.map((c,i) => c==='.' ? i : -1).filter(i => i>=0);
   let idx;
 if(r.game === 'ttt'){
@@ -578,7 +635,7 @@ if(r.game === 'ttt'){
 
 function autoMove(){
   const r = room;
-  if(!r || !r.p2 || r.winner || r.turn !== me || r.game === 'rps') return;
+  if(AUTO[r.game]){ toast('وقت تموم شد، حرکت خودکار'); return AUTO[r.game](r); }
   toast('وقت تموم شد، حرکت خودکار');
   if(r.game === 'ttt'){
     const f = [...r.board].map((c,i) => c==='.' ? i : -1).filter(i => i>=0);
@@ -712,7 +769,8 @@ function renderGame(){
     body = `<div class="card wait"><label>${pub ? 'دنبال حریف می‌گردیم…' : 'این کد رو به دوستت بده'}</label>
       <div class="code">${r.code}</div>${pub ? '' : '<button id="inv">کپی لینک دعوت</button>'}</div>
       <div class="status pulse">منتظر بازیکن دوم…</div>`;
-  } else if(r.game === 'ttt') body = viewTTT(r, opp, nm);
+  } else if(VIEWS[r.game]) body = VIEWS[r.game](r, opp, nm);
+  else if(r.game === 'ttt') body = viewTTT(r, opp, nm);
   else if(r.game === 'c4') body = viewC4(r, opp, nm);
   else body = viewRPS(r, opp, nm);
 
@@ -732,7 +790,7 @@ function renderGame(){
 
   app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => playCell(+b.dataset.i));
   app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => playCol(+b.dataset.c));
-  app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => pick(b.dataset.m));
+  app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACT[r.game] && ACT[r.game](b.dataset.act));
   app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => sendReact(b.dataset.e));
   app.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
   $('#leave').onclick = leave;
@@ -974,6 +1032,222 @@ function renderLudo(){
   clearTimeout(turnT);
   if(myTurn) turnT = setTimeout(ludoAuto, 25000);
 }
+/* ================= بازی‌های جدید ================= */
+const NEWBLANK = {}, VIEWS = {}, ACT = {}, BOTS = {}, AUTO = {};
+const other = k => k === 1 ? 2 : 1;
+
+// ثبت حرکت برای همه‌ی بازی‌های جدید (turn = نوبت بعدی، w = برنده یا ۰)
+async function commitG(r, b, turn, w = 0){
+  const upd = { board: JSON.stringify(b), turn, winner: w };
+  if(w === 1 || w === 2) upd['s' + w] = r['s' + w] + 1;
+  sfx.move();
+  const prev = room; room = { ...r, ...upd }; onRoomChange(prev, room); renderGame();
+  const { data } = await sb.from('rooms').update(upd).eq('code', r.code).eq('board', r.board).select();
+  if(!data || !data.length) sync();
+}
+
+/* ---------------- نیم ---------------- */
+NEWBLANK.nim = () => {
+  let p;
+  do { p = [0,0,0,0].map(() => 2 + (Math.random()*7|0)); } while(p.reduce((a,b) => a^b) === 0);
+  return JSON.stringify({ p, l:null });
+};
+VIEWS.nim = (r, opp, nm) => {
+  const s = JSON.parse(r.board), over = !!r.winner, my = r.turn === me && !over;
+  const st = over ? (r.winner === me ? '🎉 آخرین چوب رو برداشتی، بردی!' : `${nm(opp)} آخرین چوب رو برداشت`)
+           : my ? 'نوبت توئه، روی یه چوب بزن' : `نوبت ${nm(opp)}`;
+  const cls = over ? (r.winner === me ? 'win' : 'lose') : (my ? 'mine' : '');
+  const rows = s.p.map((n, i) => `<div class="nrow">${Array.from({length:n}, (_, j) =>
+    `<button class="stick" data-act="${i}:${j}" aria-label="چوب" ${my ? '' : 'disabled'}></button>`).join('')}<span class="ncnt">${n}</span></div>`).join('');
+  const last = s.l ? `<div class="hint">${s.l[2] === me ? 'تو' : nm(s.l[2])} ${s.l[1]} چوب از ردیف ${s.l[0]+1} برداشت</div>` : '';
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div>
+    <div class="hint">با زدن روی هر چوب، اون و همه‌ی چوب‌های سمت راستش تو همون ردیف برداشته می‌شن.</div>
+    <div class="nim">${rows}</div>${last}`;
+};
+ACT.nim = a => {
+  const r = room; if(!r.p2 || r.winner || r.turn !== me) return;
+  const [i, j] = a.split(':').map(Number), s = JSON.parse(r.board);
+  if(!(j < s.p[i])) return;
+  const take = s.p[i] - j; s.p[i] = j; s.l = [i, take, me];
+  const won = s.p.every(n => n === 0);
+  commitG(r, s, won ? me : other(me), won ? me : 0);
+};
+BOTS.nim = r => {
+  const s = JSON.parse(r.board), p = s.p, x = p.reduce((a,b) => a^b);
+  let i, take;
+  if(x === 0 || Math.random() < .2){          // گاهی عمداً اشتباه می‌کنه تا قابل بردن باشه
+    const ids = p.map((n,k) => n ? k : -1).filter(k => k >= 0);
+    i = ids[Math.random()*ids.length|0]; take = 1 + (Math.random()*p[i]|0);
+  } else {
+    i = p.findIndex(n => (n^x) < n); take = p[i] - (p[i]^x);
+  }
+  p[i] -= take; s.l = [i, take, 2];
+  const won = p.every(n => n === 0);
+  commitG(r, s, won ? 2 : 1, won ? 2 : 0);
+};
+AUTO.nim = r => {
+  const s = JSON.parse(r.board), ids = s.p.map((n,k) => n ? k : -1).filter(k => k >= 0);
+  const i = ids[Math.random()*ids.length|0];
+  ACT.nim(i + ':' + (s.p[i] - 1));
+};
+
+/* ---------------- نقطه‌بازی ---------------- */
+const DN = 5; // ۵×۵ خونه = ۲۵ خونه، پس مساوی نداره
+const dbEdges = (r, c) => [['h', r*DN+c], ['h', (r+1)*DN+c], ['v', r*(DN+1)+c], ['v', r*(DN+1)+c+1]];
+const dbCount = (s, w) => [...s.o].filter(x => x === String(w)).length;
+const dbResult = s => s.o.includes('.') ? 0 : (dbCount(s,1) > dbCount(s,2) ? 1 : 2);
+const dbFree = s => { const f = []; ['h','v'].forEach(k => [...s[k]].forEach((c,i) => { if(c === '.') f.push([k,i]); })); return f; };
+const dbSides = (s, r, c) => dbEdges(r, c).filter(([k,i]) => s[k][i] !== '.').length;
+const dbAdj = (k, i) => {
+  const out = [];
+  if(k === 'h'){ const r = (i/DN|0), c = i%DN; if(r > 0) out.push([r-1,c]); if(r < DN) out.push([r,c]); }
+  else { const r = (i/(DN+1)|0), c = i%(DN+1); if(c > 0) out.push([r,c-1]); if(c < DN) out.push([r,c]); }
+  return out;
+};
+NEWBLANK.dots = () => JSON.stringify({ h:'.'.repeat(DN*(DN+1)), v:'.'.repeat(DN*(DN+1)), o:'.'.repeat(DN*DN) });
+function dbPlay(s, k, i, who){
+  const a = s[k].split(''); a[i] = String(who); s[k] = a.join('');
+  const o = s.o.split(''); let got = 0;
+  for(let r = 0; r < DN; r++) for(let c = 0; c < DN; c++){
+    if(o[r*DN+c] !== '.') continue;
+    if(dbEdges(r, c).every(([kk, ii]) => s[kk][ii] !== '.')){ o[r*DN+c] = String(who); got++; }
+  }
+  s.o = o.join(''); return got;
+}
+VIEWS.dots = (r, opp, nm) => {
+  const s = JSON.parse(r.board), over = !!r.winner, my = r.turn === me && !over;
+  let pb = null; try{ pb = prevBoard && prevBoard[0] === '{' ? JSON.parse(prevBoard) : null; }catch(e){}
+  if(pb && !pb.o) pb = null;
+  const S = 14, P = 8, W = DN*S + 2*P, cl = v => v === '1' ? 'a' : 'b';
+  let g = '', es = '', ds = '';
+  for(let i = 0; i < DN*DN; i++){
+    if(s.o[i] === '.') continue;
+    const fresh = pb && pb.o[i] === '.';
+    g += `<rect class="bx ${cl(s.o[i])}${fresh ? ' new' : ''}" x="${P + (i%DN)*S + 1.5}" y="${P + (i/DN|0)*S + 1.5}" width="${S-3}" height="${S-3}" rx="2.5"/>`;
+  }
+  const edge = (k, i) => {
+    const rr = k === 'h' ? (i/DN|0) : (i/(DN+1)|0), cc = k === 'h' ? i%DN : i%(DN+1);
+    const x1 = P + cc*S, y1 = P + rr*S, x2 = k === 'h' ? x1 + S : x1, y2 = k === 'h' ? y1 : y1 + S;
+    const pos = `x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"`, v = s[k][i];
+    if(v === '.') return `<g class="eg${my ? ' on' : ''}" data-act="${k}:${i}"><line class="ghost" ${pos}/><line class="hit" ${pos}/></g>`;
+    const fresh = pb && pb[k] && pb[k][i] === '.';
+    return `<line class="ln ${cl(v)}${fresh ? ' new' : ''}" ${pos}/>`;
+  };
+  for(let i = 0; i < DN*(DN+1); i++) es += edge('h', i) + edge('v', i);
+  for(let rr = 0; rr <= DN; rr++) for(let cc = 0; cc <= DN; cc++) ds += `<circle cx="${P + cc*S}" cy="${P + rr*S}" r="1.7"/>`;
+  const st = over ? (r.winner === me ? '🎉 بردی!' : 'این دست رو باختی') : my ? 'نوبت توئه، یه خط بکش' : `نوبت ${nm(opp)}`;
+  const cls = over ? (r.winner === me ? 'win' : 'lose') : (my ? 'mine' : '');
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div>
+    <div class="dscore"><span class="c1">${nm(1)}: ${dbCount(s,1)}</span><span class="c2">${nm(2)}: ${dbCount(s,2)}</span></div>
+    <svg class="dots" viewBox="0 0 ${W} ${W}">${g}${es}${ds}</svg>
+    <div class="hint">هرکی یه خونه رو ببنده، یه بار دیگه بازی می‌کنه.</div>`;
+};
+ACT.dots = a => {
+  const r = room; if(!r.p2 || r.winner || r.turn !== me) return;
+  const [k, i] = a.split(':'), s = JSON.parse(r.board);
+  if(!s[k] || s[k][+i] !== '.') return;
+  const got = dbPlay(s, k, +i, me), res = dbResult(s);
+  commitG(r, s, got ? me : other(me), res);
+};
+BOTS.dots = r => {
+  const s = JSON.parse(r.board), free = dbFree(s);
+  const score = ([k,i]) => dbAdj(k,i).reduce((m,[rr,cc]) => Math.max(m, dbSides(s,rr,cc)), 0);
+  const take = free.filter(e => score(e) === 3), safe = free.filter(e => score(e) < 2);
+  const pool = take.length ? take : safe.length ? safe : free;
+  const [k, i] = pool[Math.random()*pool.length|0];
+  const got = dbPlay(s, k, i, 2), res = dbResult(s);
+  commitG(r, s, got && !res ? 2 : 1, res);
+};
+AUTO.dots = r => { const f = dbFree(JSON.parse(r.board)), e = f[Math.random()*f.length|0]; ACT.dots(e[0] + ':' + e[1]); };
+
+/* ---------------- حدس عدد ---------------- */
+NEWBLANK.num = () => JSON.stringify({ n: 1 + (Math.random()*100|0), lo:1, hi:100, g:[] });
+function numApply(s, v, who){
+  s.g.push([v, who]);
+  if(v === s.n) return true;
+  if(v < s.n) s.lo = Math.max(s.lo, v + 1); else s.hi = Math.min(s.hi, v - 1);
+  return false;
+}
+function numPlay(v){
+  const r = room; if(!r.p2 || r.winner || r.turn !== me) return;
+  const s = JSON.parse(r.board);
+  if(s.g.some(x => x[0] === v)){ toast('این عدد رو قبلاً گفتن'); return; }
+  const hit = numApply(s, v, me);
+  commitG(r, s, hit ? me : other(me), hit ? me : 0);
+}
+VIEWS.num = (r, opp, nm) => {
+  const s = JSON.parse(r.board), over = !!r.winner, my = r.turn === me && !over;
+  const st = over ? (r.winner === me ? `🎯 عدد ${s.n} رو پیدا کردی!` : `${nm(opp)} عدد ${s.n} رو پیدا کرد`)
+           : my ? 'نوبت توئه، حدس بزن' : `نوبت ${nm(opp)}`;
+  const cls = over ? (r.winner === me ? 'win' : 'lose') : (my ? 'mine' : '');
+  const marks = s.g.map(([v, w]) => `<b class="m${w}" style="left:${v - .5}%"></b>`).join('');
+  const list = s.g.slice(-6).reverse().map(([v, w]) =>
+    `<div class="gl c${w}"><b>${v}</b><span>${w === me ? 'تو' : nm(w)}</span><em>${v === s.n ? '🎯 درست' : v < s.n ? '⬆️ بیشتر' : '⬇️ کمتر'}</em></div>`).join('');
+  const inp = my ? `<div class="row"><input id="gn" inputmode="numeric" maxlength="3" placeholder="${s.lo} تا ${s.hi}" style="direction:ltr;text-align:center" onkeydown="if(event.key==='Enter')ACT.num()"><button data-act="go">حدس بزن</button></div>` : '';
+  if(my && matchMedia('(hover:hover)').matches) setTimeout(() => { const i = $('#gn'); if(i) i.focus(); }, 60);
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div>
+    <div class="hint">${over ? '' : `عدد بین ${s.lo} و ${s.hi} هست`}</div>
+    <div class="nbar"><i style="left:${s.lo - 1}%;width:${s.hi - s.lo + 1}%"></i>${marks}</div>
+    <div class="nrange"><span>1</span><span>100</span></div>${inp}<div class="glist">${list}</div>`;
+};
+ACT.num = () => {
+  const raw = (($('#gn') || {}).value || '').trim().replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+  const v = +raw;
+  if(!raw || !Number.isInteger(v) || v < 1 || v > 100){ toast('یه عدد بین ۱ تا ۱۰۰ بنویس'); return; }
+  numPlay(v);
+};
+BOTS.num = r => {
+  const s = JSON.parse(r.board);
+  let v = Math.floor((s.lo + s.hi) / 2);
+  if(Math.random() < .35) v = s.lo + (Math.random()*(s.hi - s.lo + 1)|0);
+  const hit = numApply(s, v, 2);
+  commitG(r, s, hit ? 2 : 1, hit ? 2 : 0);
+};
+AUTO.num = r => { const s = JSON.parse(r.board); numPlay(s.lo + (Math.random()*(s.hi - s.lo + 1)|0)); };
+
+/* ---------------- حدس کلمه ---------------- */
+const FA = [...'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی'];
+const FREQ = [...'ایرنودمتهکسلبشزفگقجحپچخعصغطضذثظژ'];
+const WORDS = [['درخت','طبیعت'],['دریا','طبیعت'],['کوهستان','طبیعت'],['خورشید','آسمان'],['ستاره','آسمان'],
+  ['کتاب','وسایل'],['موبایل','وسایل'],['کامپیوتر','وسایل'],['تلفن','وسایل'],['ساعت','وسایل'],['چراغ','وسایل'],['بادکنک','وسایل'],
+  ['ماشین','وسیله نقلیه'],['دوچرخه','وسیله نقلیه'],['هواپیما','وسیله نقلیه'],['قطار','وسیله نقلیه'],
+  ['پروانه','حیوان'],['کبوتر','حیوان'],['زرافه','حیوان'],['ماهی','حیوان'],['شتر','حیوان'],['پلنگ','حیوان'],['گوسفند','حیوان'],['کلاغ','حیوان'],
+  ['شکلات','خوراکی'],['بستنی','خوراکی'],['پیتزا','خوراکی'],['هندوانه','میوه'],['پرتقال','میوه'],['انگور','میوه'],
+  ['مدرسه','مکان'],['خیابان','مکان'],['فرودگاه','مکان'],['بازار','مکان'],['کتابخانه','مکان'],
+  ['فوتبال','ورزش'],['والیبال','ورزش'],['شنا','ورزش'],['شطرنج','بازی'],['عروسک','بازی'],
+  ['پنجره','خانه'],['گلدان','خانه'],['یخچال','خانه'],['نقاشی','هنر']];
+NEWBLANK.word = () => { const [w, c] = WORDS[Math.random()*WORDS.length|0]; return JSON.stringify({ w, c, g:'', m:[0,0] }); };
+VIEWS.word = (r, opp, nm) => {
+  const s = JSON.parse(r.board), over = !!r.winner, my = r.turn === me && !over;
+  const st = over ? (r.winner === me ? '🎉 کلمه رو کامل کردی!' : 'این دست رو باختی') : my ? 'نوبت توئه، یه حرف انتخاب کن' : `نوبت ${nm(opp)}`;
+  const cls = over ? (r.winner === me ? 'win' : 'lose') : (my ? 'mine' : '');
+  const boxes = [...s.w].map(ch => { const open = s.g.includes(ch); return `<span class="wl${!open && over ? ' miss' : ''}">${open || over ? ch : ''}</span>`; }).join('');
+  const lives = `<div class="lives">${[1,2].map(k => `<span>${k === me ? 'تو' : nm(k)}: ${'❤️'.repeat(6 - s.m[k-1])}${'🖤'.repeat(s.m[k-1])}</span>`).join('')}</div>`;
+  const keys = FA.map(L => { const used = s.g.includes(L), good = used && s.w.includes(L);
+    return `<button class="key${good ? ' ok' : used ? ' bad' : ''}" data-act="${L}" ${!my || used ? 'disabled' : ''}>${L}</button>`; }).join('');
+  return `${timerBar(r)}<div class="status ${cls}">${st}</div>
+    <div class="hint">دسته‌بندی: ${s.c} · ${[...s.w].length} حرفی · حرف درست بزنی، نوبت با خودته</div>
+    ${lives}<div class="wordbox">${boxes}</div><div class="keys">${keys}</div>`;
+};
+function wordApply(r, s, L, who){
+  s.g += L;
+  let turn = who, w = 0;
+  if(s.w.includes(L)){ if([...s.w].every(ch => s.g.includes(ch))) w = who; }
+  else { s.m[who-1]++; turn = other(who); if(s.m[who-1] >= 6) w = other(who); }
+  commitG(r, s, turn, w);
+}
+ACT.word = L => {
+  const r = room; if(!r.p2 || r.winner || r.turn !== me) return;
+  const s = JSON.parse(r.board);
+  if(!FA.includes(L) || s.g.includes(L)) return;
+  wordApply(r, s, L, me);
+};
+BOTS.word = r => {
+  const s = JSON.parse(r.board), left = FREQ.filter(x => !s.g.includes(x));
+  const L = Math.random() < .25 ? left[Math.random()*left.length|0] : left[0];
+  wordApply(r, s, L, 2);
+};
+AUTO.word = r => { const s = JSON.parse(r.board), left = FA.filter(x => !s.g.includes(x)); ACT.word(left[Math.random()*left.length|0]); };
 /* ---------- شروع ---------- */
 (async function init(){
 
