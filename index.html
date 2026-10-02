@@ -806,7 +806,8 @@ async function ludoRoll(){
   const r = room;
   if(!r || r.game !== 'ludo' || r.winner || r.turn !== me) return;
   const s = JSON.parse(r.board); if(s.d) return;
-  const M = r.maxp || 2, d = Math.floor(Math.random() * 6) + 1;
+  const M = r.maxp || 2, d = cheatDice || Math.floor(Math.random() * 6) + 1;
+  cheatDice = 0;
   let upd;
   if(ludoMoves(r, s, me, d).length){
     upd = { board: JSON.stringify({ ...s, d, ld:d, lt:me }) };
@@ -843,6 +844,14 @@ const DICE_PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,
 const diceHTML = (v, col, rolling) =>
   `<div class="die${rolling ? ' rolling' : ''}${v ? '' : ' empty'}" style="--dc:${col}">${[0,1,2,3,4,5,6,7,8].map(i => `<i${(DICE_PIPS[v] || []).includes(i) ? ' class="on"' : ''}></i>`).join('')}</div>`;
 let ludoPrev = { code:'', pos:{}, s:null };
+  let cheatDice = 0;
+const CHEAT_KEYS = { F1:1, F2:2, F3:3, F7:4, F5:5, F6:6 };
+addEventListener('keydown', e => {
+  if(!e.altKey || !(e.key in CHEAT_KEYS)) return;
+  e.preventDefault();
+  cheatDice = CHEAT_KEYS[e.key];
+  toast('🎲 ' + cheatDice);
+});
 
 function renderLudo(){
   app.className = '';
