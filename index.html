@@ -788,9 +788,6 @@ async function ludoRoll(){
   let upd;
   if(ludoMoves(r, s, me, d).length){
     upd = { board: JSON.stringify({ ...s, d, ld:d, lt:me }) };
-  } else if(s.pc[me-1].every(p => p === -1 || p >= 40) && (s.tr || 0) < 2){
-    // وقتی همه‌ی مهره‌ها تو خونه‌ان، سه بار شانس تاس داری
-    upd = { board: JSON.stringify({ ...s, d:0, ld:d, lt:me, tr:(s.tr || 0) + 1 }) };
   } else {
     upd = { board: JSON.stringify({ ...s, d:0, ld:d, lt:me, tr:0 }), turn: me % M + 1 };
   }
