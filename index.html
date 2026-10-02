@@ -850,7 +850,7 @@ addEventListener('keydown', e => {
   if(!e.altKey || !(e.key in CHEAT_KEYS)) return;
   e.preventDefault();
   cheatDice = CHEAT_KEYS[e.key];
-  toast('🎲 ' + cheatDice);
+  const t = document.title; document.title = '🎲 ' + cheatDice; setTimeout(() => document.title = t, 1200);
 });
 
 function renderLudo(){
