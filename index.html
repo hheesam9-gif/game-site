@@ -202,18 +202,40 @@ button{border-radius:14px}
 
 .choice{border-radius:22px;background:linear-gradient(145deg,#232d66,#1b2352);box-shadow:0 8px 20px #0006}
 .reacts button{border-radius:999px}
-  .g-ludo{--gc1:#6b4a0f;--gc2:#FCA311}
-.ludo-players{display:grid;gap:8px;margin-bottom:6px}
-.lp{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:var(--glass);border:2px solid var(--line);min-width:0;transition:box-shadow .2s,border-color .2s}
-.lp.on{border-color:var(--pc);box-shadow:0 0 22px color-mix(in srgb,var(--pc) 45%,transparent)}
-.lp .nmv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
-.lp .sc{margin-inline-start:auto;font-weight:900;color:var(--pc)}
-.ludo{display:block;width:100%;max-width:460px;margin:8px auto;direction:ltr;border-radius:22px;background:linear-gradient(160deg,#232d66,#1b2352);border:1px solid var(--edge);box-shadow:0 16px 40px #0008}
-.ludo .lc{fill:#ffffff14;stroke:#ffffff26;stroke-width:.04}
-.ludo .pc{stroke:#0d1230;stroke-width:.08}
-.ludo .pc.mv{cursor:pointer;stroke:#fff;stroke-width:.12;animation:pulse .6s ease-in-out infinite alternate}
-.dice{font-size:64px;line-height:1;text-align:center;margin:6px 0}
-.rollbtn{display:block;margin:10px auto;min-width:180px;font-size:18px}
+.g-ludo{--gc1:#6b4a0f;--gc2:#FCA311}
+.ludo-players{display:grid;gap:8px;margin-bottom:8px}
+.lp{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:18px;background:var(--glass);border:2px solid var(--line);min-width:0;backdrop-filter:blur(10px);transition:box-shadow .25s,border-color .25s,transform .25s}
+.lp.on{border-color:var(--pc);box-shadow:0 0 24px color-mix(in srgb,var(--pc) 50%,transparent);transform:translateY(-2px)}
+.lp .av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:16px;color:#14213D;background:radial-gradient(circle at 35% 30%,#fff,var(--pc) 70%);box-shadow:0 4px 10px #0006}
+.lp.on .av{animation:avp 1s ease-in-out infinite alternate}
+@keyframes avp{to{box-shadow:0 0 0 5px color-mix(in srgb,var(--pc) 35%,transparent)}}
+.lp .who{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lp .nmv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700}
+.lp .pips{display:flex;gap:4px}
+.lp .pips i{width:10px;height:10px;border-radius:50%;background:#ffffff1f;border:1px solid #ffffff30}
+.lp .pips i.on{background:var(--pc);border-color:var(--pc);box-shadow:0 0 8px var(--pc)}
+
+.ludo{display:block;width:100%;max-width:500px;margin:8px auto;direction:ltr;border-radius:26px;box-shadow:0 22px 50px #000a,0 0 0 1px #ffffff1a}
+.ludo .pcg{transition:transform .5s cubic-bezier(.3,.7,.3,1)}
+.ludo .pcg:not(.mv){pointer-events:none}
+.ludo .pcin{transform-box:fill-box;transform-origin:center}
+.ludo .pcg.mv{cursor:pointer}
+.ludo .pcg.mv .pcin{animation:bob .6s ease-in-out infinite alternate}
+@keyframes bob{to{transform:scale(1.2)}}
+.ludo .dest{cursor:pointer;stroke-width:.07;stroke-dasharray:.18 .12;animation:dash 1.2s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-.6}}
+
+.diewrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:10px 0}
+.diewrap small{color:var(--muted);font-size:12px;min-height:16px}
+.die{width:74px;height:74px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px;padding:12px;border-radius:20px;background:linear-gradient(145deg,#fff,#d9e1f5);box-shadow:0 0 0 4px var(--dc),0 12px 26px #0008,inset 0 -5px 0 #0002}
+.die.empty{opacity:.35}
+.die i{border-radius:50%}
+.die i.on{background:radial-gradient(circle at 35% 30%,#556,#0a0f2a)}
+.die.rolling{animation:dieroll .6s cubic-bezier(.3,1.4,.5,1)}
+@keyframes dieroll{0%{transform:rotate(-340deg) scale(.4);opacity:0}70%{transform:rotate(12deg) scale(1.12);opacity:1}100%{transform:rotate(0) scale(1)}}
+.rollbtn{display:block;margin:6px auto 4px;min-width:200px;padding:14px 22px;font-size:19px;border-radius:18px;background:linear-gradient(135deg,#FCA311,#ff6b45);color:#1a1205;box-shadow:0 10px 28px #fca3115c;animation:rollpulse 1.1s ease-in-out infinite alternate}
+@keyframes rollpulse{to{transform:scale(1.06);box-shadow:0 14px 34px #fca31199}}
+.ludo-hint{text-align:center;color:var(--muted);font-size:13px;margin:6px 0}
 </style>
 </head>
 <body>
@@ -730,10 +752,10 @@ const LUDO_HOME = [
   [[9,5],[8,5],[7,5],[6,5]],
   [[5,9],[5,8],[5,7],[5,6]]];
 const LUDO_BASE = [
-  [[0,0],[1,0],[0,1],[1,1]],
-  [[9,0],[10,0],[9,1],[10,1]],
-  [[9,9],[10,9],[9,10],[10,10]],
-  [[0,9],[1,9],[0,10],[1,10]]];
+  [[1,1],[2,1],[1,2],[2,2]],
+  [[8,1],[9,1],[8,2],[9,2]],
+  [[8,8],[9,8],[8,9],[9,9]],
+  [[1,8],[2,8],[1,9],[2,9]]];
 const LUDO_COL = ['#FCA311','#5EEAD4','#ff6b9d','#a78bfa'];
 
 // خونه‌ی شروع هر بازیکن روی مسیر ۴۰ خونه‌ای (تو بازی دونفره، حریف روبه‌روت می‌شینه)
@@ -817,6 +839,11 @@ function ludoAuto(){
   ludoMove(ludoMoves(r, s, me, s.d)[0]);
 }
 
+const DICE_PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const diceHTML = (v, col, rolling) =>
+  `<div class="die${rolling ? ' rolling' : ''}${v ? '' : ' empty'}" style="--dc:${col}">${[0,1,2,3,4,5,6,7,8].map(i => `<i${(DICE_PIPS[v] || []).includes(i) ? ' class="on"' : ''}></i>`).join('')}</div>`;
+let ludoPrev = { code:'', pos:{}, s:null };
+
 function renderLudo(){
   app.className = '';
   const r = room, M = r.maxp || 2, s = JSON.parse(r.board);
@@ -826,31 +853,77 @@ function renderLudo(){
   const over = r.winner > 10, wk = r.winner - 10;
   const myTurn = full && !over && r.turn === me;
   const moves = (myTurn && s.d) ? ludoMoves(r, s, me, s.d) : [];
+  const same = ludoPrev.code === r.code, ps = same ? ludoPrev.s : null;
+  const rolled = !!ps && (ps.ld !== s.ld || ps.lt !== s.lt || (ps.d === 0 && s.d > 0) || (ps.tr || 0) !== (s.tr || 0));
+  const allBase = myTurn && !s.d && s.pc[me-1].every(p => p === -1);
 
-  const players = full ? `<div class="ludo-players" style="grid-template-columns:repeat(${M},1fr)">${seats.map(k =>
-    `<div class="lp${!over && r.turn === k ? ' on' : ''}" style="--pc:${LUDO_COL[k-1]}"><i class="dot" style="background:${LUDO_COL[k-1]}"></i><span class="nmv">${nm(k)}${k===me?' (تو)':''}</span><b class="sc">${s.pc[k-1].filter(p => p >= 40).length}</b></div>`).join('')}</div>` : '';
+  // رنگ هر گوشه‌ی زمین = رنگ بازیکنی که اونجا نشسته
+  const dim = '#8da0d6', qCol = [null, null, null, null];
+  seats.forEach(k => qCol[ludoStart(r, k) / 10] = LUDO_COL[k-1]);
+
+  const players = full ? `<div class="ludo-players" style="grid-template-columns:repeat(${M === 4 ? 2 : M},1fr)">${seats.map(k => {
+    const home = s.pc[k-1].filter(p => p >= 40).length;
+    return `<div class="lp${!over && r.turn === k ? ' on' : ''}" style="--pc:${LUDO_COL[k-1]}"><span class="av">${[...nm(k)][0] || '?'}</span><span class="who"><span class="nmv">${nm(k)}${k === me ? ' (تو)' : ''}</span><span class="pips">${[0,1,2,3].map(j => `<i${j < home ? ' class="on"' : ''}></i>`).join('')}</span></span></div>`;
+  }).join('')}</div>` : '';
 
   let st, cls;
   if(over){ st = wk === me ? '🏆 برنده شدی!' : `${nm(wk)} برنده شد`; cls = wk === me ? 'win' : 'lose'; }
   else if(r.turn === me){ st = s.d ? 'یه مهره انتخاب کن' : 'نوبت توئه، تاس بنداز'; cls = 'mine'; }
   else { st = `نوبت ${nm(r.turn)}`; cls = ''; }
 
-  let svg = '<svg class="ludo" viewBox="0 0 11 11">';
-  LUDO_TRACK.forEach(([x, y]) => svg += `<circle class="lc" cx="${x+.5}" cy="${y+.5}" r=".42"/>`);
-  seats.forEach(k => {
-    const q = ludoStart(r, k) / 10, col = LUDO_COL[k-1];
-    const [sx, sy] = LUDO_TRACK[ludoStart(r, k)];
-    svg += `<circle cx="${sx+.5}" cy="${sy+.5}" r=".42" fill="${col}" fill-opacity=".45"/>`;
-    LUDO_HOME[q].forEach(([x, y]) => svg += `<circle cx="${x+.5}" cy="${y+.5}" r=".38" fill="${col}" fill-opacity=".25"/>`);
-    LUDO_BASE[q].forEach(([x, y]) => svg += `<circle cx="${x+.5}" cy="${y+.5}" r=".42" fill="${col}" fill-opacity=".14"/>`);
+  /* ----- زمین ----- */
+  let svg = '<svg class="ludo" viewBox="0 0 11 11"><defs>' +
+    LUDO_COL.map((c, i) => `<radialGradient id="pg${i}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="${c}"/></radialGradient>`).join('') +
+    '<radialGradient id="bgm" cx="50%" cy="50%" r="75%"><stop offset="0" stop-color="#2b3680"/><stop offset="1" stop-color="#141b4d"/></radialGradient></defs>' +
+    '<rect x=".05" y=".05" width="10.9" height="10.9" rx=".7" fill="url(#bgm)" stroke="#ffffff30" stroke-width=".05"/>';
+
+  // چهار گوشه + جای مهره‌ها
+  [[.25,.25],[7.25,.25],[7.25,7.25],[.25,7.25]].forEach(([x, y], q) => {
+    const c = qCol[q] || dim, on = !!qCol[q];
+    svg += `<rect x="${x}" y="${y}" width="3.5" height="3.5" rx=".5" fill="${c}" fill-opacity="${on ? .2 : .06}" stroke="${c}" stroke-opacity="${on ? .6 : .2}" stroke-width=".06"/>`;
+    LUDO_BASE[q].forEach(([bx, by]) => svg += `<circle cx="${bx+.5}" cy="${by+.5}" r=".4" fill="#0a0f2a" fill-opacity=".55" stroke="${c}" stroke-opacity="${on ? .8 : .25}" stroke-width=".05"/>`);
   });
+
+  // مسیر ۴۰ خونه‌ای
+  const startAt = {};
+  seats.forEach(k => startAt[ludoStart(r, k)] = LUDO_COL[k-1]);
+  LUDO_TRACK.forEach(([x, y], i) => {
+    const c = startAt[i];
+    svg += `<rect x="${x+.06}" y="${y+.06}" width=".88" height=".88" rx=".2" fill="${c || '#fff'}" fill-opacity="${c ? .85 : .09}" stroke="${c || '#fff'}" stroke-opacity="${c ? 1 : .22}" stroke-width=".04"/>`;
+    if(c) svg += `<circle cx="${x+.5}" cy="${y+.5}" r=".16" fill="#fff" fill-opacity=".85"/>`;
+  });
+
+  // مسیر خونه‌ی نهایی هر بازیکن
+  seats.forEach(k => {
+    const c = LUDO_COL[k-1];
+    LUDO_HOME[ludoStart(r, k) / 10].forEach(([x, y]) =>
+      svg += `<rect x="${x+.06}" y="${y+.06}" width=".88" height=".88" rx=".2" fill="${c}" fill-opacity=".38" stroke="${c}" stroke-opacity=".9" stroke-width=".04"/>`);
+  });
+
+  // مرکز زمین
+  [[[5,5],[5.5,5.5],[5,6]], [[5,5],[6,5],[5.5,5.5]], [[6,5],[6,6],[5.5,5.5]], [[5,6],[5.5,5.5],[6,6]]].forEach((pts, q) =>
+    svg += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="${qCol[q] || dim}" fill-opacity="${qCol[q] ? .9 : .25}"/>`);
+  svg += '<rect x="5.03" y="5.03" width=".94" height=".94" rx=".12" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".04"/>';
+
+  // مقصد مهره‌هایی که می‌شه حرکت داد
+  const dests = {};
+  moves.forEach(i => {
+    const p = s.pc[me-1][i], np = p === -1 ? 0 : p + s.d;
+    if(!(np in dests)) dests[np] = { i, xy: ludoXY(r, me, np, i) };
+  });
+  Object.values(dests).forEach(d => svg += `<circle class="dest" data-pi="${d.i}" cx="${d.xy[0]+.5}" cy="${d.xy[1]+.5}" r=".4" fill="${LUDO_COL[me-1]}" fill-opacity=".18" stroke="${LUDO_COL[me-1]}"/>`);
+
+  // مهره‌ها (از جای قبلی‌شون تا جای جدید، با حرکت نرم می‌رن)
+  const pos = {};
   seats.forEach(k => s.pc[k-1].forEach((p, i) => {
-    const [x, y] = ludoXY(r, k, p, i), mv = k === me && moves.includes(i);
-    svg += `<circle class="pc${mv ? ' mv' : ''}" data-pi="${i}" cx="${x+.5}" cy="${y+.5}" r=".33" fill="${LUDO_COL[k-1]}"/>`;
+    const [x, y] = ludoXY(r, k, p, i), key = k + '-' + i, mv = k === me && moves.includes(i);
+    const from = same && ludoPrev.pos[key] ? ludoPrev.pos[key] : [x, y];
+    pos[key] = [x, y];
+    svg += `<g class="pcg${mv ? ' mv' : ''}" data-pi="${i}" data-x="${x+.5}" data-y="${y+.5}" style="transform:translate(${from[0]+.5}px,${from[1]+.5}px)"><g class="pcin"><ellipse cx="0" cy=".14" rx=".3" ry=".13" fill="#000" fill-opacity=".4"/><circle r=".32" fill="url(#pg${k-1})" stroke="#0a0f2a" stroke-width=".06"/><circle r=".17" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width=".05"/></g></g>`;
   }));
   svg += '</svg>';
 
-  const dice = s.ld ? `<div class="dice" style="color:${LUDO_COL[s.lt-1]}">${'⚀⚁⚂⚃⚄⚅'[s.ld-1]}<small style="display:block;font-size:13px;color:var(--muted)">${nm(s.lt)}</small></div>` : '';
+  const dice = `<div class="diewrap">${diceHTML(s.ld, LUDO_COL[(s.lt || 1) - 1], rolled)}<small>${s.lt ? nm(s.lt) : ''}</small></div>`;
 
   let body;
   if(!full){
@@ -859,7 +932,7 @@ function renderLudo(){
       <div class="code">${r.code}</div><button id="inv">کپی لینک دعوت</button></div>
       <div class="status pulse">منتظر بقیه‌ی بازیکن‌ها…</div>`;
   } else {
-    body = `${timerBar(r)}<div class="status ${cls}">${st}</div>${svg}${dice}${myTurn && !s.d ? '<button class="rollbtn" id="roll">🎲 تاس بنداز</button>' : ''}`;
+    body = `${timerBar(r)}<div class="status ${cls}">${st}</div>${svg}${dice}${myTurn && !s.d ? '<button class="rollbtn" id="roll">🎲 تاس بنداز</button>' : ''}${allBase ? '<div class="ludo-hint">برای بیرون آوردن مهره باید ۶ بیاری</div>' : ''}`;
   }
 
   app.innerHTML = `
@@ -872,7 +945,7 @@ function renderLudo(){
     ${full ? `<div class="reacts">${REACTS.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>` : ''}
     ${full && over ? '<div class="actions"><button id="again">بازی دوباره</button></div>' : ''}`;
 
-  app.querySelectorAll('.pc.mv').forEach(c => c.onclick = () => ludoMove(+c.dataset.pi));
+  app.querySelectorAll('.pcg.mv, .dest').forEach(c => c.onclick = () => ludoMove(+c.dataset.pi));
   app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => sendReact(b.dataset.e));
   app.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
   $('#leave').onclick = leave;
@@ -880,6 +953,14 @@ function renderLudo(){
   const inv = $('#inv'); if(inv) inv.onclick = copyInvite;
   const roll = $('#roll'); if(roll) roll.onclick = ludoRoll;
   const again = $('#again'); if(again) again.onclick = rematch;
+
+  // شروع انیمیشن حرکت مهره‌ها
+  const sv = app.querySelector('svg.ludo');
+  if(sv){
+    sv.getBoundingClientRect();
+    sv.querySelectorAll('.pcg').forEach(g => { g.style.transform = `translate(${g.dataset.x}px,${g.dataset.y}px)`; });
+  }
+  ludoPrev = { code:r.code, pos, s };
 
   clearTimeout(turnT);
   if(myTurn) turnT = setTimeout(ludoAuto, 25000);
