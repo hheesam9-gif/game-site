@@ -810,6 +810,7 @@ function renderGame(){
   app.querySelectorAll('[data-i]').forEach(b => b.onclick = () => playCell(+b.dataset.i));
   app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => playCol(+b.dataset.c));
   app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACT[r.game] && ACT[r.game](b.dataset.act));
+    app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => pick(b.dataset.m));
   app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => sendReact(b.dataset.e));
   app.querySelectorAll('.snd').forEach(b => b.onclick = toggleSound);
   $('#leave').onclick = leave;
@@ -1284,16 +1285,7 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if(!document.hidden && room) sync(); });
 addEventListener('online', () => { if(room) sync(); });
 addEventListener('focus', () => { if(room) sync(); });
-/* ---------- تقلب سنگ کاغذ قیچی: Alt+F8 ---------- */
-addEventListener('keydown', e => {
-  if(!e.altKey || e.key !== 'F8') return;
-  e.preventDefault();
-  if(!room || room.game !== 'rps' || !room.p2) return;
-  const o = me === 1 ? 2 : 1, m = room['m' + o];
-  const t = document.title;
-  document.title = m ? EMOJI[m] : '…';   // انتخاب حریف تو عنوان تب نشون داده می‌شه
-  setTimeout(() => document.title = t, 1500);
-});
+
 /* ---------- شروع ---------- */
 (async function init(){
 
