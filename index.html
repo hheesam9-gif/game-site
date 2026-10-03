@@ -923,11 +923,18 @@ const diceHTML = (v, col, rolling) =>
 let ludoPrev = { code:'', pos:{}, s:null };
   let cheatDice = 0;
 const CHEAT_KEYS = { F1:1, F2:2, F3:3, F7:4, F5:5, F6:6 };
+let rpsTitle = null;
 addEventListener('keydown', e => {
-  if(!e.altKey || !(e.key in CHEAT_KEYS)) return;
+  if(!e.altKey || e.key !== 'F8') return;
   e.preventDefault();
-  cheatDice = CHEAT_KEYS[e.key];
-  const t = document.title; document.title = '🎲 ' + cheatDice; setTimeout(() => document.title = t, 1200);
+  if(!room || room.game !== 'rps' || !room.p2) return;
+  if(rpsTitle === null) rpsTitle = document.title;
+  const o = me === 1 ? 2 : 1, m = room['m' + o];
+  document.title = m ? EMOJI[m] : '…';
+});
+addEventListener('keyup', e => {
+  if(rpsTitle === null) return;
+  if(e.key === 'F8' || e.key === 'Alt'){ document.title = rpsTitle; rpsTitle = null; }
 });
 
 function renderLudo(){
