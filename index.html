@@ -528,6 +528,7 @@ function paintPresence(){
 }
 
 function onRoomChange(p, n){
+  lastChange = Date.now();
   if(!p) return;
   if(n.game === 'ludo' && n.winner > 10) n = { ...n, winner: n.winner - 10 === me ? me : 99 };
   if(!p.p2 && n.p2) sfx.join();
@@ -1266,6 +1267,16 @@ BOTS.word = r => {
   wordApply(r, s, L, 2);
 };
 AUTO.word = r => { const s = JSON.parse(r.board), left = FA.filter(x => !s.g.includes(x)); ACT.word(left[Math.random()*left.length|0]); };
+/* ---------- هم‌گام‌سازی اتوماتیک (اگه realtime قطع شد) ---------- */
+let lastChange = 0;
+// هر ۳ ثانیه وضعیت اتاق رو از دیتابیس می‌گیره؛ فقط اگه چیزی عوض شده باشه صفحه آپدیت می‌شه
+setInterval(() => {
+  if(room && !document.hidden && Date.now() - lastChange > 1500) sync();
+}, 3000);
+// وقتی از تب دیگه یا قفل گوشی برمی‌گرده، فوری هم‌گام می‌شه
+document.addEventListener('visibilitychange', () => { if(!document.hidden && room) sync(); });
+addEventListener('online', () => { if(room) sync(); });
+addEventListener('focus', () => { if(room) sync(); });
 /* ---------- شروع ---------- */
 (async function init(){
 
