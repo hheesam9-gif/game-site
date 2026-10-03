@@ -250,20 +250,38 @@ button{border-radius:14px}
 .ncnt{margin-inline-start:auto;color:var(--muted);font-weight:900;font-size:18px}
 
 /* نقطه‌بازی */
-.dscore{display:flex;justify-content:space-between;max-width:440px;margin:0 auto 4px;font-weight:900}
-.dscore .c1{color:var(--p1)} .dscore .c2{color:var(--p2)}
-.dots{display:block;width:100%;max-width:440px;margin:6px auto;direction:ltr;border-radius:22px;background:linear-gradient(160deg,#232d66,#1b2352);border:1px solid var(--edge);box-shadow:0 14px 34px #0007}
-.dots circle{fill:#dbe4ff}
-.dots .ghost{stroke:#ffffff14;stroke-width:1.2;stroke-linecap:round}
+.dsb{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:440px;margin:0 auto 8px}
+.dpl{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:var(--glass);border:2px solid var(--edge);backdrop-filter:blur(10px);min-width:0;transition:box-shadow .25s,border-color .25s,transform .25s}
+.dpl.c1{--pc:var(--p1)} .dpl.c2{--pc:var(--p2)}
+.dpl.on{border-color:var(--pc);box-shadow:0 0 24px color-mix(in srgb,var(--pc) 50%,transparent);transform:translateY(-2px)}
+.dpl .av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:16px;color:#14213D;background:radial-gradient(circle at 35% 30%,#fff,var(--pc) 70%);box-shadow:0 4px 10px #0006}
+.dpl.on .av{animation:avp 1s ease-in-out infinite alternate}
+.dpl .nmv{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;font-weight:700}
+.dpl b{font-size:30px;font-weight:900;line-height:1;color:var(--pc)}
+.dprog{display:flex;direction:rtl;height:8px;border-radius:99px;overflow:hidden;background:#ffffff14;max-width:440px;margin:0 auto 10px}
+.dprog i{display:block;height:100%;transition:width .5s}
+.dprog i.a{background:var(--p1)} .dprog i.b{background:var(--p2)}
+
+.dots{display:block;width:100%;max-width:440px;margin:8px auto;direction:ltr;border-radius:28px;background:radial-gradient(circle at 50% 0%,#33419f,#1b2352 72%);border:1px solid var(--edge);box-shadow:0 18px 44px #000a,inset 0 1px 0 #ffffff22;touch-action:manipulation}
+.dots.m1{--hv:var(--p1)} .dots.m2{--hv:var(--p2)}
+.dots .dt{fill:#eef2ff;filter:drop-shadow(0 0 1.2px #fff9)}
+.dots .ghost{stroke:#ffffff26;stroke-width:.8;stroke-linecap:round;stroke-dasharray:.1 2.2;transition:stroke .15s}
 .dots .hit{stroke:transparent;stroke-width:7;stroke-linecap:round;pointer-events:stroke}
 .dots .eg.on{cursor:pointer}
-.dots .eg.on:hover .ghost{stroke:#fff;stroke-opacity:.8}
+.dots .eg.on:hover .ghost{stroke:var(--hv);stroke-width:1.9;stroke-dasharray:none;stroke-opacity:.85}
 .dots .ln{stroke-width:1.9;stroke-linecap:round}
-.dots .ln.a{stroke:var(--p1)} .dots .ln.b{stroke:var(--p2)}
+.dots .ln.a{stroke:var(--p1);filter:drop-shadow(0 0 1.6px var(--p1))}
+.dots .ln.b{stroke:var(--p2);filter:drop-shadow(0 0 1.6px var(--p2))}
+.dots .ln.last{filter:drop-shadow(0 0 3.2px #fff)}
 .dots .ln.new{stroke-dasharray:20;animation:ldraw .35s ease-out backwards}
-.dots .bx{fill-opacity:.4;transform-box:fill-box;transform-origin:center}
-.dots .bx.a{fill:var(--p1)} .dots .bx.b{fill:var(--p2)}
-.dots .bx.new{animation:bxin .4s ease-out backwards}
+.dots .bx{transform-box:fill-box;transform-origin:center}
+.dots .bx rect{stroke-width:.4}
+.dots .bx.a rect{fill:var(--p1);fill-opacity:.32;stroke:var(--p1);stroke-opacity:.8}
+.dots .bx.b rect{fill:var(--p2);fill-opacity:.32;stroke:var(--p2);stroke-opacity:.8}
+.dots .bx text{font:900 6.6px Vazirmatn,Tahoma,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#fff;fill-opacity:.92}
+.dots .bx.new{animation:bxin .45s cubic-bezier(.3,1.5,.5,1) backwards}
+.dots .hot{fill:#ff5d5d;fill-opacity:.12;animation:hotp .9s ease-in-out infinite alternate}
+@keyframes hotp{to{fill-opacity:.28}}
 @keyframes ldraw{from{stroke-dashoffset:20}}
 @keyframes bxin{from{transform:scale(.2);opacity:0}}
 
@@ -1106,7 +1124,7 @@ const dbAdj = (k, i) => {
 };
 NEWBLANK.dots = () => JSON.stringify({ h:'.'.repeat(DN*(DN+1)), v:'.'.repeat(DN*(DN+1)), o:'.'.repeat(DN*DN) });
 function dbPlay(s, k, i, who){
-  const a = s[k].split(''); a[i] = String(who); s[k] = a.join('');
+  const a = s[k].split(''); a[i] = String(who); s[k] = a.join(''); s.l = [k, i];
   const o = s.o.split(''); let got = 0;
   for(let r = 0; r < DN; r++) for(let c = 0; c < DN; c++){
     if(o[r*DN+c] !== '.') continue;
